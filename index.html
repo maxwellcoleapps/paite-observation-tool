@@ -1768,6 +1768,69 @@ h2 {
   }
 }
 
+/* Code distribution chart */
+.chart-layout {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2rem;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 0;
+}
+
+.chart-figure {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: center;
+}
+
+.chart-figure svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.pie-legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex: 1 1 260px;
+  min-width: 240px;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.pie-legend li {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 0.9rem;
+}
+
+.legend-swatch {
+  width: 0.85rem;
+  height: 0.85rem;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.legend-label {
+  flex: 1;
+  min-width: 0;
+}
+
+.legend-value {
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-muted, #4c5a56);
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .chart-layout {
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+}
+
 </style>
   </head>
   <body>
@@ -2016,6 +2079,25 @@ h2 {
 
   const app = document.getElementById("app");
   const announcer = document.getElementById("announcer");
+
+  const CODE_COLORS = {
+    PRIOR: "#1971c2",
+    COMP: "#3bc9db",
+    DIVEX: "#9c36b5",
+    MED: "#845ef7",
+    REAL: "#e8590c",
+    COM: "#fcc419",
+    REL: "#2f9e44",
+    NAME: "#94d82d",
+    AFFIRM: "#0ca678",
+    GROW: "#22b8cf",
+    EXCL: "#e03131",
+    IDEN: "#c2255c",
+    EQPART: "#f08c00",
+    ACTIVE: "#5f3dc4",
+    CHOICE: "#007b77",
+    O: "#868e96",
+  };
 
   const state = {
     screen: "setup",
@@ -2572,6 +2654,7 @@ h2 {
           </div>
           <div class="summary-actions print-hidden">
             <button class="button button-secondary" data-action="export-csv">${icon("download")} Export CSV</button>
+            <button class="button button-secondary" data-action="download-report">${icon("download")} Download report</button>
             <button class="button button-primary" data-action="print-summary">${icon("print")} Print or save PDF</button>
           </div>
         </div>
@@ -2581,6 +2664,14 @@ h2 {
           <div><strong>${summary.practiceCount} of 15</strong><span>PAITE practices observed</span></div>
           <div><strong>${summary.totalCodeMarks}</strong><span>Total behavior marks</span></div>
           <div><strong>${formatTimer(getElapsedSeconds(observation))}</strong><span>Elapsed observation time</span></div>
+        </section>
+
+        <section class="summary-panel chart-panel">
+          <div class="panel-heading"><div><h2>Code distribution</h2><p>Share of all ${summary.totalCodeMarks} recorded behavior marks, matching the PAITE data visualization template.</p></div></div>
+          <div class="chart-layout">
+            <div class="chart-figure">${renderPieSvg(observation)}</div>
+            ${renderPieLegend(observation)}
+          </div>
         </section>
 
         <section class="summary-panel">
@@ -2642,6 +2733,72 @@ h2 {
           <a href="${DATA.sources.codeGuide}" target="_blank" rel="noreferrer">PAITE code guide</a>
         </footer>
       </main>
+    `;
+  }
+
+  function getPieData(observation) {
+    return SCORING.getRankedCodes(observation.intervals).filter(
+      (item) => item.total > 0,
+    );
+  }
+
+  function pieSlicePath(cx, cy, r, startAngle, endAngle) {
+    const toXY = (angle) => [
+      cx + r * Math.cos(((angle - 90) * Math.PI) / 180),
+      cy + r * Math.sin(((angle - 90) * Math.PI) / 180),
+    ];
+    const [x1, y1] = toXY(startAngle);
+    const [x2, y2] = toXY(endAngle);
+    const largeArc = endAngle - startAngle > 180 ? 1 : 0;
+    return `M ${cx} ${cy} L ${x1.toFixed(2)} ${y1.toFixed(2)} A ${r} ${r} 0 ${largeArc} 1 ${x2.toFixed(2)} ${y2.toFixed(2)} Z`;
+  }
+
+  function renderPieSvg(observation, size = 280) {
+    const data = getPieData(observation);
+    const totalMarks = data.reduce((sum, item) => sum + item.total, 0);
+    if (!totalMarks) {
+      return '<p class="empty-inline">No coded behaviors recorded yet.</p>';
+    }
+    const cx = size / 2;
+    const cy = size / 2;
+    const r = size / 2 - 4;
+    let angle = 0;
+    let shapes = "";
+    if (data.length === 1) {
+      shapes = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${CODE_COLORS[data[0].code] || "#868e96"}"><title>${data[0].code}: ${data[0].total} (100%)</title></circle>`;
+    } else {
+      shapes = data
+        .map((item) => {
+          const share = item.total / totalMarks;
+          const start = angle;
+          const end = angle + share * 360;
+          angle = end;
+          const pct = Math.round(share * 100);
+          return `<path d="${pieSlicePath(cx, cy, r, start, end)}" fill="${CODE_COLORS[item.code] || "#868e96"}" stroke="#fff" stroke-width="1.5"><title>${item.code}: ${item.total} (${pct}%)</title></path>`;
+        })
+        .join("");
+    }
+    return `<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" role="img" aria-label="Pie chart of observed PAITE behavior codes">${shapes}</svg>`;
+  }
+
+  function renderPieLegend(observation) {
+    const data = getPieData(observation);
+    const totalMarks = data.reduce((sum, item) => sum + item.total, 0);
+    if (!totalMarks) return "";
+    return `
+      <ul class="pie-legend">
+        ${data
+          .map(
+            (item) => `
+              <li>
+                <span class="legend-swatch" style="background:${CODE_COLORS[item.code] || "#868e96"}"></span>
+                <span class="legend-label"><strong>${item.code}</strong> ${escapeHtml(item.shortLabel)}</span>
+                <span class="legend-value">${item.total} · ${Math.round((item.total / totalMarks) * 100)}%</span>
+              </li>
+            `,
+          )
+          .join("")}
+      </ul>
     `;
   }
 
@@ -2948,6 +3105,7 @@ h2 {
       return;
     }
     if (action === "export-csv") return exportCsv();
+    if (action === "download-report") return downloadReport();
     if (action === "print-summary") return window.print();
   }
 
@@ -2998,6 +3156,140 @@ h2 {
     link.click();
     URL.revokeObjectURL(link.href);
     announce("CSV export created.");
+  }
+
+  function buildReportHtml(observation) {
+    const meta = observation.metadata;
+    const summary = SCORING.getSummary(observation.intervals);
+    const ranked = summary.ranked;
+    const topMethods = ranked.filter((item) => item.total > 0 && item.code !== "O").slice(0, 3);
+    const growthAreas = ranked
+      .filter((item) => item.total === 0 && !["O", "EXCL", "IDEN"].includes(item.code))
+      .slice(0, 5);
+    const recorded = SCORING.recordedIntervals(observation.intervals);
+    const notedIntervals = recorded.filter((item) => item.notes.trim());
+    const frequencyRows = ranked
+      .map(
+        (item) => `<tr><td><strong>${item.code}</strong></td><td>${escapeHtml(item.label)}</td><td>${item.total}</td><td>${item.percentage}%</td></tr>`,
+      )
+      .join("");
+    return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Post-Observation Report — ${escapeHtml(meta.course)} — ${escapeHtml(meta.date || "")}</title>
+<style>
+  body { font-family: Georgia, "Times New Roman", serif; color: #1c2321; max-width: 800px; margin: 2rem auto; padding: 0 1.5rem; line-height: 1.55; }
+  h1 { font-size: 1.6rem; letter-spacing: 0.04em; margin-bottom: 0.1rem; }
+  h2 { font-size: 1.15rem; border-bottom: 2px solid #007b77; padding-bottom: 0.25rem; margin-top: 2rem; }
+  .subtitle { color: #4c5a56; margin-top: 0; }
+  .details { border-collapse: collapse; width: 100%; margin-top: 0.75rem; }
+  .details td { padding: 0.3rem 0.6rem; border: 1px solid #d5ddda; }
+  .details td:first-child { font-weight: bold; width: 32%; background: #f2f6f5; }
+  table.freq { border-collapse: collapse; width: 100%; font-size: 0.92rem; }
+  table.freq th, table.freq td { border: 1px solid #d5ddda; padding: 0.3rem 0.55rem; text-align: left; }
+  table.freq th { background: #f2f6f5; }
+  .chart-wrap { display: flex; flex-wrap: wrap; gap: 1.5rem; align-items: center; margin-top: 1rem; }
+  ul.legend { list-style: none; padding: 0; margin: 0; font-size: 0.9rem; }
+  ul.legend li { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.3rem; }
+  .swatch { width: 0.85rem; height: 0.85rem; border-radius: 3px; display: inline-block; flex-shrink: 0; }
+  .note-block { margin-bottom: 0.6rem; }
+  .note-block strong { color: #007b77; }
+  .instructions { background: #f2f6f5; border-left: 4px solid #007b77; padding: 0.75rem 1rem; font-size: 0.92rem; }
+  .citation { font-size: 0.8rem; color: #4c5a56; margin-top: 2.5rem; border-top: 1px solid #d5ddda; padding-top: 0.75rem; }
+  @media print { body { margin: 0.5rem auto; } }
+</style>
+</head>
+<body>
+<h1>POST-OBSERVATION REPORT</h1>
+<p class="subtitle">Protocol for Advancing Inclusive Teaching Efforts (PAITE)</p>
+
+<p class="instructions"><strong>Instructions for Instructor:</strong> The observer has summarized the classroom observation data from your class session below. You can use this information to reflect on your inclusive teaching practices in a data-guided manner.</p>
+
+<h2>Observation Details</h2>
+<table class="details">
+  <tr><td>Instructor</td><td>${escapeHtml(meta.instructor)}${meta.instructorId ? ` (${escapeHtml(meta.instructorId)})` : ""}</td></tr>
+  <tr><td>Observer</td><td>${escapeHtml(meta.observer)}</td></tr>
+  <tr><td>Class Observed</td><td>${escapeHtml(meta.course)}</td></tr>
+  <tr><td>Date</td><td>${escapeHtml(formatShortDate(meta.date))}</td></tr>
+  <tr><td>Class Length</td><td>${meta.classLength} minutes</td></tr>
+  <tr><td>Students Present</td><td>${meta.studentCount}</td></tr>
+</table>
+
+<h2>Summary of Classroom Observation Feedback</h2>
+${
+  topMethods.length
+    ? `<p>According to the data collected, the inclusive teaching methods observed the most were:</p>
+<ul>${topMethods.map((item) => `<li><strong>${escapeHtml(item.label)}</strong> (${item.code}) — recorded in ${item.total} interval${item.total === 1 ? "" : "s"} (${item.percentage}% of recorded intervals)</li>`).join("")}</ul>`
+    : "<p>No coded behaviors were recorded during this observation.</p>"
+}
+
+<h2>Code Distribution</h2>
+<div class="chart-wrap">
+  ${renderPieSvg(observation, 260)}
+  <ul class="legend">
+    ${getPieData(observation)
+      .map(
+        (item) => `<li><span class="swatch" style="background:${CODE_COLORS[item.code] || "#868e96"}"></span><strong>${item.code}</strong>&nbsp;${escapeHtml(item.shortLabel)} — ${item.total}</li>`,
+      )
+      .join("")}
+  </ul>
+</div>
+
+<h2>Behavior Frequency</h2>
+<table class="freq">
+  <thead><tr><th>Code</th><th>Behavior</th><th>Count</th><th>% of ${summary.recordedCount} recorded intervals</th></tr></thead>
+  <tbody>${frequencyRows}</tbody>
+</table>
+
+<h2>Notes</h2>
+<p>Highlights from the observation:</p>
+${
+  notedIntervals.length
+    ? notedIntervals
+        .map(
+          (item) => `<div class="note-block"><strong>${intervalLabel(item)}:</strong> ${escapeHtml(item.notes)}</div>`,
+        )
+        .join("")
+    : "<p><em>No interval notes were recorded. The observer may add additional observational feedback here.</em></p>"
+}
+${meta.classroomArrangement ? `<div class="note-block"><strong>Classroom arrangement:</strong> ${escapeHtml(meta.classroomArrangement)}</div>` : ""}
+${meta.groupObservations ? `<div class="note-block"><strong>Group observations:</strong> ${escapeHtml(meta.groupObservations)}</div>` : ""}
+${meta.accessibilityObservations ? `<div class="note-block"><strong>Accessibility observations:</strong> ${escapeHtml(meta.accessibilityObservations)}</div>` : ""}
+
+<h2>Suggestions</h2>
+${
+  growthAreas.length
+    ? `<p>The potential areas of growth include:</p>
+<ul>${growthAreas.map((item) => `<li><strong>${escapeHtml(item.label)}</strong> (${item.code}): ${escapeHtml(item.definition)}</li>`).join("")}</ul>`
+    : "<p>All applicable PAITE practices were observed at least once. Continue reinforcing the practices above.</p>"
+}
+<p><em>Note: PAITE counts are descriptive, not a composite quality score. Context-dependent codes, including EXCL and IDEN, may remain at zero when no relevant event occurs and are excluded from suggested growth areas.</em></p>
+
+<p class="citation">${escapeHtml(DATA.sources.citation)}</p>
+</body>
+</html>`;
+  }
+
+  function downloadReport() {
+    const observation = getSummaryObservation();
+    if (!observation) return;
+    const meta = observation.metadata;
+    const blob = new Blob([buildReportHtml(observation)], {
+      type: "text/html;charset=utf-8",
+    });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `paite-report-${meta.course || "observation"}-${meta.date || ""}`
+      .toLowerCase()
+      .replace(/[^a-z0-9-]+/g, "-")
+      .replace(/-+/g, "-")
+      .replace(/-$/, "")
+      .concat(".html");
+    link.click();
+    URL.revokeObjectURL(link.href);
+    announce("Post-observation report downloaded.");
   }
 
   app.addEventListener("submit", (event) => {
