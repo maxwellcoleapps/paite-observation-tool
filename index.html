@@ -1,0 +1,3056 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="A browser-based prototype for recording PAITE classroom observations in two-minute intervals."
+    />
+    <title>PAITE Classroom Observation Tool</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23007b77'/%3E%3Cpath d='M17 48V16h15c9 0 15 5 15 13S41 42 32 42h-7v6zm8-13h7c5 0 7-2 7-6s-2-6-7-6h-7z' fill='white'/%3E%3C/svg%3E" />
+    <style>
+:root {
+  --navy-950: #091b3f;
+  --navy-900: #0d2148;
+  --navy-700: #2f4263;
+  --slate-600: #5b687f;
+  --slate-500: #718096;
+  --slate-300: #c6cdd8;
+  --slate-200: #dfe4eb;
+  --slate-100: #edf1f5;
+  --slate-50: #f7f9fb;
+  --white: #ffffff;
+  --teal-800: #006965;
+  --teal-700: #007b77;
+  --teal-600: #008985;
+  --teal-100: #d7f0ee;
+  --teal-50: #eef9f8;
+  --coral-700: #d43b42;
+  --coral-100: #fdebed;
+  --focus: #1f6feb;
+  --shadow-sm: 0 1px 3px rgba(9, 27, 63, 0.08);
+  --shadow-md: 0 12px 32px rgba(9, 27, 63, 0.12);
+  --radius-sm: 8px;
+  --radius: 12px;
+  --radius-lg: 18px;
+  --content: 1440px;
+  --font: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: light;
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background: var(--white);
+  color: var(--navy-950);
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+select,
+textarea {
+  color: inherit;
+  font: inherit;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+a {
+  color: var(--teal-800);
+}
+
+h1,
+h2,
+h3,
+p {
+  margin-top: 0;
+}
+
+h1 {
+  margin-bottom: 8px;
+  font-size: clamp(2rem, 4vw, 3.25rem);
+  line-height: 1.06;
+  letter-spacing: -0.035em;
+}
+
+h2 {
+  margin-bottom: 8px;
+  font-size: 1.2rem;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip-link {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: 1000;
+  padding: 10px 14px;
+  background: var(--navy-950);
+  color: var(--white);
+  transform: translateY(-160%);
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+
+.icon {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 auto;
+}
+
+.app-header {
+  position: relative;
+  z-index: 30;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: stretch;
+  min-height: 80px;
+  padding: 0 32px;
+  border-bottom: 1px solid var(--slate-200);
+  background: var(--white);
+}
+
+.brand {
+  align-self: center;
+  border: 0;
+  background: transparent;
+  color: var(--navy-950);
+  font-size: 2.25rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.primary-nav {
+  display: flex;
+  align-items: stretch;
+  gap: 18px;
+  margin-left: 34px;
+}
+
+.nav-link {
+  position: relative;
+  min-width: 110px;
+  border: 0;
+  background: transparent;
+  color: var(--navy-950);
+  font-size: 1rem;
+  font-weight: 650;
+}
+
+.nav-link::after {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  background: var(--teal-700);
+  content: "";
+  opacity: 0;
+  transform: scaleX(0.6);
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.nav-link:hover,
+.nav-link.is-active {
+  color: var(--teal-800);
+}
+
+.nav-link.is-active::after {
+  opacity: 1;
+  transform: scaleX(1);
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  min-width: 140px;
+}
+
+.mobile-menu-button {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border: 0;
+  background: transparent;
+}
+
+.button {
+  display: inline-flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 0 20px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  font-size: 0.98rem;
+  font-weight: 700;
+  line-height: 1;
+  text-decoration: none;
+  transition: background 150ms ease, border-color 150ms ease, color 150ms ease,
+    transform 150ms ease;
+}
+
+.button:not(:disabled):active {
+  transform: translateY(1px);
+}
+
+.button-primary {
+  border-color: var(--teal-700);
+  background: var(--teal-700);
+  color: var(--white);
+  box-shadow: var(--shadow-sm);
+}
+
+.button-primary:hover {
+  border-color: var(--teal-800);
+  background: var(--teal-800);
+}
+
+.button-secondary {
+  border-color: var(--teal-700);
+  background: var(--white);
+  color: var(--teal-800);
+}
+
+.button-secondary:hover {
+  background: var(--teal-50);
+}
+
+.button-danger {
+  border-color: #ee747a;
+  background: var(--white);
+  color: var(--coral-700);
+}
+
+.button-danger:hover {
+  background: var(--coral-100);
+}
+
+.button-compact {
+  min-height: 48px;
+  padding: 0 18px;
+}
+
+.button-small {
+  min-height: 40px;
+  padding: 0 16px;
+  font-size: 0.9rem;
+}
+
+.text-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 0;
+  border: 0;
+  background: transparent;
+  color: var(--teal-800);
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.text-button:hover {
+  text-decoration: underline;
+}
+
+.icon-button {
+  display: inline-flex;
+  width: 42px;
+  height: 42px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid var(--slate-300);
+  border-radius: var(--radius-sm);
+  background: var(--white);
+  color: var(--navy-900);
+}
+
+.icon-button:hover {
+  background: var(--slate-50);
+}
+
+.icon-button-danger {
+  color: var(--coral-700);
+}
+
+.content-page {
+  width: min(100% - 48px, 1240px);
+  margin: 0 auto;
+  padding: 64px 0 88px;
+}
+
+.observation-strip {
+  display: grid;
+  grid-template-columns: minmax(550px, 1fr) auto minmax(220px, 300px);
+  align-items: center;
+  gap: 28px;
+  min-height: 110px;
+  padding: 18px 40px;
+  border-bottom: 1px solid var(--slate-200);
+}
+
+.meta-list {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(110px, 1fr));
+  align-items: center;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 4px 20px;
+  border-right: 1px solid var(--slate-300);
+}
+
+.meta-item:first-child {
+  padding-left: 0;
+}
+
+.meta-item:last-child {
+  border-right: 0;
+}
+
+.meta-icon {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+}
+
+.meta-item div {
+  min-width: 0;
+}
+
+.meta-item span,
+.history-stat span,
+.history-date span,
+.summary-kpis span {
+  display: block;
+  color: var(--slate-600);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.meta-item strong {
+  display: block;
+  overflow: hidden;
+  font-size: 1rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.timer-block {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.timer-display {
+  min-width: 132px;
+  font-size: 2.6rem;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+}
+
+.timer-toggle {
+  min-width: 112px;
+}
+
+.progress-block strong {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 0.94rem;
+}
+
+.progress-track {
+  width: 100%;
+  height: 9px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: var(--slate-200);
+}
+
+.progress-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--teal-700);
+  transition: width 300ms linear;
+}
+
+.observation-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(360px, 1fr);
+  min-height: calc(100vh - 270px);
+}
+
+.interval-workspace {
+  padding: 30px 38px 36px;
+  border-right: 1px solid var(--slate-200);
+}
+
+.workspace-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.workspace-heading h1 {
+  margin-bottom: 5px;
+  font-size: clamp(1.75rem, 2.5vw, 2.25rem);
+  line-height: 1.15;
+}
+
+.workspace-heading p {
+  margin-bottom: 0;
+  color: var(--slate-600);
+}
+
+.code-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(140px, 1fr));
+  gap: 16px;
+}
+
+.code-button {
+  position: relative;
+  display: flex;
+  min-height: 124px;
+  align-items: center;
+  justify-content: center;
+  padding: 18px 28px 18px 18px;
+  border: 1.5px solid var(--slate-300);
+  border-radius: var(--radius-sm);
+  background: var(--white);
+  color: var(--navy-950);
+  text-align: center;
+  box-shadow: 0 0 0 rgba(0, 0, 0, 0);
+  transition: border-color 140ms ease, background 140ms ease, color 140ms ease,
+    box-shadow 140ms ease, transform 140ms ease;
+}
+
+.code-button:hover {
+  border-color: var(--teal-700);
+  box-shadow: var(--shadow-sm);
+}
+
+.code-button:active {
+  transform: scale(0.99);
+}
+
+.code-button.is-selected {
+  border-color: var(--teal-700);
+  background: var(--teal-700);
+  color: var(--white);
+  box-shadow: 0 4px 14px rgba(0, 123, 119, 0.2);
+}
+
+.code-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.code-copy strong {
+  font-size: 1.02rem;
+  letter-spacing: 0.01em;
+}
+
+.code-copy span {
+  font-size: 0.92rem;
+  line-height: 1.25;
+}
+
+.code-check {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: none;
+  width: 28px;
+  height: 28px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--white);
+  color: var(--teal-700);
+}
+
+.code-check .icon {
+  width: 18px;
+  height: 18px;
+  stroke-width: 2.4;
+}
+
+.code-button.is-selected .code-check {
+  display: flex;
+}
+
+.observation-sidebar {
+  background: var(--white);
+}
+
+.sidebar-section {
+  padding: 26px 30px;
+  border-bottom: 1px solid var(--slate-200);
+}
+
+.sidebar-section h2 {
+  margin-bottom: 16px;
+  font-size: 1.1rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  color: var(--navy-900);
+  font-weight: 700;
+}
+
+.field > span:first-child {
+  font-size: 0.9rem;
+}
+
+.field small {
+  color: var(--slate-500);
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+.field input,
+.field select,
+.field textarea {
+  width: 100%;
+  border: 1px solid var(--slate-300);
+  border-radius: var(--radius-sm);
+  background: var(--white);
+  color: var(--navy-950);
+  font-weight: 500;
+}
+
+.field input,
+.field select {
+  height: 50px;
+  padding: 0 14px;
+}
+
+.field textarea {
+  min-height: 104px;
+  padding: 12px 14px;
+  line-height: 1.45;
+  resize: vertical;
+}
+
+.field input::placeholder,
+.field textarea::placeholder {
+  color: #8a95a6;
+}
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  border-color: var(--teal-700);
+  outline: 3px solid rgba(31, 111, 235, 0.18);
+  outline-offset: 1px;
+}
+
+.character-count {
+  align-self: flex-end;
+  margin-top: -4px;
+}
+
+.recent-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.recent-row {
+  display: grid;
+  grid-template-columns: 86px 1fr 24px 18px;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 8px 0;
+  border: 0;
+  border-bottom: 1px solid var(--slate-200);
+  background: transparent;
+  color: var(--navy-900);
+  font-size: 0.84rem;
+  text-align: left;
+}
+
+.recent-row:last-child {
+  border-bottom: 0;
+}
+
+.recent-row:hover {
+  color: var(--teal-800);
+}
+
+.recent-row .icon {
+  width: 17px;
+  height: 17px;
+}
+
+.recent-codes {
+  overflow: hidden;
+  color: var(--navy-700);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.frequency-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.frequency-row {
+  display: grid;
+  grid-template-columns: 58px 1fr 24px;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.8rem;
+}
+
+.frequency-row > span:first-child {
+  font-weight: 700;
+}
+
+.mini-bar {
+  height: 7px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: var(--slate-200);
+}
+
+.mini-bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--teal-700);
+}
+
+.summary-link {
+  margin-top: 16px;
+}
+
+.empty-inline {
+  margin: 0;
+  color: var(--slate-600);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.mobile-notes {
+  display: none;
+}
+
+.observation-actions {
+  position: sticky;
+  z-index: 20;
+  bottom: 0;
+  display: grid;
+  grid-template-columns: auto auto 1fr auto;
+  align-items: center;
+  gap: 18px;
+  min-height: 82px;
+  padding: 14px 32px;
+  border-top: 1px solid var(--slate-200);
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 -10px 28px rgba(9, 27, 63, 0.05);
+}
+
+.continue-button {
+  min-width: 290px;
+}
+
+.autosave-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--navy-700);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.autosave-status .icon {
+  width: 20px;
+  height: 20px;
+  color: var(--teal-700);
+}
+
+.setup-page {
+  width: min(100% - 48px, 1080px);
+  margin: 0 auto;
+  padding: 64px 0 96px;
+}
+
+.setup-intro {
+  max-width: 720px;
+  margin-bottom: 44px;
+}
+
+.setup-intro p,
+.page-heading-row p,
+.summary-heading p,
+.panel-heading p {
+  margin-bottom: 0;
+  color: var(--slate-600);
+}
+
+.setup-form {
+  display: flex;
+  flex-direction: column;
+  gap: 48px;
+}
+
+.form-section {
+  padding-top: 26px;
+  border-top: 1px solid var(--slate-200);
+}
+
+.form-section > h2,
+.section-heading h2 {
+  margin-bottom: 22px;
+  font-size: 1.35rem;
+}
+
+.section-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.form-grid {
+  display: grid;
+  gap: 22px;
+}
+
+.form-grid-three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.form-grid-two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.field-wide {
+  grid-column: 1 / -1;
+}
+
+.input-with-suffix {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  overflow: hidden;
+  border: 1px solid var(--slate-300);
+  border-radius: var(--radius-sm);
+}
+
+.input-with-suffix input {
+  border: 0;
+  border-radius: 0;
+}
+
+.input-with-suffix > span {
+  padding-right: 14px;
+  color: var(--slate-600);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.setup-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 14px;
+  padding-top: 24px;
+  border-top: 1px solid var(--slate-200);
+}
+
+.page-heading-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 30px;
+  margin-bottom: 36px;
+}
+
+.page-heading-row h1 {
+  font-size: clamp(2rem, 4vw, 3rem);
+}
+
+.history-list {
+  border-top: 1px solid var(--slate-300);
+}
+
+.history-row {
+  display: grid;
+  grid-template-columns: 135px 1fr 90px 90px auto;
+  align-items: center;
+  gap: 24px;
+  min-height: 112px;
+  padding: 20px 6px;
+  border-bottom: 1px solid var(--slate-200);
+}
+
+.history-date strong,
+.history-stat strong {
+  display: block;
+  font-size: 1rem;
+}
+
+.history-main h2 {
+  margin-bottom: 4px;
+  font-size: 1.12rem;
+}
+
+.history-main p {
+  margin-bottom: 0;
+  color: var(--slate-600);
+  font-size: 0.9rem;
+}
+
+.history-stat {
+  text-align: center;
+}
+
+.history-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.empty-state {
+  display: flex;
+  min-height: 420px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  border: 1px solid var(--slate-200);
+  border-radius: var(--radius-lg);
+  text-align: center;
+}
+
+.empty-icon {
+  width: 44px;
+  height: 44px;
+  margin-bottom: 20px;
+  color: var(--teal-700);
+}
+
+.empty-state p {
+  max-width: 420px;
+  margin-bottom: 24px;
+  color: var(--slate-600);
+}
+
+.summary-page {
+  width: min(100% - 48px, 1180px);
+}
+
+.summary-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 30px;
+  margin-bottom: 34px;
+}
+
+.summary-heading h1 {
+  max-width: 760px;
+  font-size: clamp(2rem, 4vw, 3rem);
+}
+
+.summary-date {
+  margin-bottom: 8px !important;
+  color: var(--teal-800) !important;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.summary-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.summary-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  margin-bottom: 32px;
+  border-top: 1px solid var(--slate-300);
+  border-bottom: 1px solid var(--slate-300);
+}
+
+.summary-kpis div {
+  padding: 24px 20px;
+  border-right: 1px solid var(--slate-200);
+}
+
+.summary-kpis div:first-child {
+  padding-left: 0;
+}
+
+.summary-kpis div:last-child {
+  border-right: 0;
+}
+
+.summary-kpis strong {
+  display: block;
+  margin-bottom: 3px;
+  font-size: 1.7rem;
+  line-height: 1.1;
+}
+
+.summary-panel {
+  margin-bottom: 28px;
+  padding: 26px;
+  border: 1px solid var(--slate-200);
+  border-radius: var(--radius);
+  background: var(--white);
+}
+
+.panel-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 20px;
+}
+
+.frequency-table-header,
+.frequency-table-row {
+  display: grid;
+  grid-template-columns: 86px minmax(190px, 1.3fr) minmax(180px, 1fr) 100px;
+  align-items: center;
+  gap: 18px;
+}
+
+.frequency-table-header {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--slate-300);
+  color: var(--slate-600);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.frequency-table-row {
+  min-height: 54px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--slate-200);
+  font-size: 0.88rem;
+}
+
+.frequency-table-row:last-child {
+  border-bottom: 0;
+}
+
+.frequency-table-row > span:last-child {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  justify-self: end;
+}
+
+.frequency-table-row small {
+  color: var(--slate-600);
+}
+
+.summary-bar {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: var(--slate-200);
+}
+
+.summary-bar i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--teal-700);
+}
+
+.segment-table-wrap {
+  overflow-x: auto;
+}
+
+.segment-table {
+  width: 100%;
+  min-width: 650px;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.segment-table th,
+.segment-table td {
+  padding: 11px 12px;
+  border-bottom: 1px solid var(--slate-200);
+  text-align: center;
+}
+
+.segment-table thead th {
+  color: var(--slate-600);
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.segment-table th:first-child {
+  text-align: left;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 28px;
+}
+
+.context-list {
+  margin: 0;
+}
+
+.context-list div {
+  padding: 13px 0;
+  border-bottom: 1px solid var(--slate-200);
+}
+
+.context-list div:last-child {
+  border-bottom: 0;
+}
+
+.context-list dt {
+  margin-bottom: 3px;
+  color: var(--slate-600);
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.context-list dd {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.summary-notes-list > div {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--slate-200);
+}
+
+.summary-notes-list > div:last-child {
+  border-bottom: 0;
+}
+
+.summary-notes-list strong {
+  font-size: 0.78rem;
+}
+
+.summary-notes-list p {
+  margin: 4px 0 0;
+  color: var(--navy-700);
+  font-size: 0.9rem;
+}
+
+.method-note {
+  display: flex;
+  gap: 16px;
+  margin: 0 0 28px;
+  padding: 22px 24px;
+  border: 1px solid #b8dedb;
+  border-radius: var(--radius);
+  background: var(--teal-50);
+}
+
+.method-note > .icon {
+  color: var(--teal-800);
+}
+
+.method-note h2 {
+  margin-bottom: 5px;
+  font-size: 1rem;
+}
+
+.method-note p {
+  margin: 0;
+  color: var(--navy-700);
+  font-size: 0.9rem;
+}
+
+.source-footer {
+  padding-top: 20px;
+  border-top: 1px solid var(--slate-200);
+  color: var(--slate-600);
+  font-size: 0.76rem;
+}
+
+.source-footer p {
+  margin-bottom: 8px;
+}
+
+.modal-open {
+  overflow: hidden;
+}
+
+.modal-backdrop {
+  position: fixed;
+  z-index: 100;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(9, 27, 63, 0.52);
+}
+
+.guide-modal {
+  display: flex;
+  width: min(920px, 100%);
+  max-height: min(86vh, 900px);
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  background: var(--white);
+  box-shadow: var(--shadow-md);
+}
+
+.modal-heading,
+.modal-footer {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 24px 28px;
+  border-bottom: 1px solid var(--slate-200);
+}
+
+.modal-heading h1 {
+  margin-bottom: 4px;
+  font-size: 1.7rem;
+}
+
+.modal-heading p {
+  margin: 0;
+  color: var(--slate-600);
+}
+
+.guide-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 28px;
+  overflow-y: auto;
+  padding: 12px 28px;
+}
+
+.guide-list article {
+  display: grid;
+  grid-template-columns: 70px 1fr;
+  gap: 12px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--slate-200);
+}
+
+.guide-list article > strong {
+  color: var(--teal-800);
+  font-size: 0.88rem;
+}
+
+.guide-list h2 {
+  margin-bottom: 3px;
+  font-size: 0.92rem;
+}
+
+.guide-list p {
+  margin: 0;
+  color: var(--slate-600);
+  font-size: 0.82rem;
+}
+
+.modal-footer {
+  align-items: center;
+  border-top: 1px solid var(--slate-200);
+  border-bottom: 0;
+}
+
+.text-link {
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+@media (max-width: 1180px) {
+  .observation-strip {
+    grid-template-columns: minmax(500px, 1fr) auto;
+    gap: 18px;
+    padding: 16px 24px;
+  }
+
+  .progress-block {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: 180px 1fr;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .progress-block strong {
+    margin-bottom: 0;
+  }
+
+  .code-grid {
+    grid-template-columns: repeat(3, minmax(140px, 1fr));
+  }
+
+  .observation-layout {
+    grid-template-columns: minmax(0, 1.7fr) minmax(330px, 1fr);
+  }
+}
+
+@media (max-width: 920px) {
+  .app-header {
+    min-height: 72px;
+    padding: 0 22px;
+  }
+
+  .brand {
+    font-size: 1.9rem;
+  }
+
+  .primary-nav {
+    gap: 4px;
+    margin-left: 18px;
+  }
+
+  .nav-link {
+    min-width: 92px;
+  }
+
+  .meta-list {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .meta-observer {
+    display: none;
+  }
+
+  .observation-layout {
+    display: block;
+  }
+
+  .interval-workspace {
+    border-right: 0;
+  }
+
+  .observation-sidebar {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-top: 1px solid var(--slate-200);
+  }
+
+  .notes-section {
+    display: none;
+  }
+
+  .summary-kpis {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .summary-kpis div:nth-child(2) {
+    border-right: 0;
+  }
+
+  .summary-kpis div:nth-child(-n + 2) {
+    border-bottom: 1px solid var(--slate-200);
+  }
+
+  .summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .form-grid-three {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .history-row {
+    grid-template-columns: 120px 1fr 72px auto;
+  }
+
+  .history-stat:nth-of-type(2) {
+    display: none;
+  }
+}
+
+@media (max-width: 720px) {
+  body {
+    font-size: 15px;
+  }
+
+  .app-header {
+    position: sticky;
+    top: 0;
+    grid-template-columns: 1fr auto;
+    min-height: 68px;
+    padding: 0 18px;
+  }
+
+  .brand {
+    justify-self: start;
+    font-size: 1.75rem;
+  }
+
+  .mobile-menu-button {
+    display: inline-flex;
+  }
+
+  .primary-nav {
+    position: absolute;
+    top: 68px;
+    right: 0;
+    left: 0;
+    display: none;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    margin: 0;
+    padding: 8px 18px 18px;
+    border-bottom: 1px solid var(--slate-200);
+    background: var(--white);
+    box-shadow: var(--shadow-md);
+  }
+
+  .primary-nav.is-open {
+    display: flex;
+  }
+
+  .nav-link {
+    min-height: 48px;
+    text-align: left;
+  }
+
+  .nav-link::after {
+    display: none;
+  }
+
+  .header-actions {
+    display: none;
+  }
+
+  .observation-strip {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+    min-height: 0;
+    padding: 20px 18px 18px;
+  }
+
+  .meta-list {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .meta-item {
+    display: none;
+  }
+
+  .meta-item:nth-child(1),
+  .meta-item:nth-child(2) {
+    display: block;
+    padding: 0;
+    border: 0;
+  }
+
+  .meta-item:nth-child(1) {
+    order: 2;
+  }
+
+  .meta-item:nth-child(2) {
+    order: 1;
+  }
+
+  .meta-item:nth-child(1) div,
+  .meta-item:nth-child(2) div {
+    display: inline;
+  }
+
+  .meta-item:nth-child(1) .meta-icon,
+  .meta-item:nth-child(2) .meta-icon,
+  .meta-item:nth-child(1) span,
+  .meta-item:nth-child(2) span {
+    display: none;
+  }
+
+  .meta-item:nth-child(2)::after {
+    margin-left: 8px;
+    content: "·";
+  }
+
+  .meta-item:nth-child(1) strong,
+  .meta-item:nth-child(2) strong {
+    display: inline;
+    font-size: 1rem;
+  }
+
+  .timer-block {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+    padding: 12px 0;
+    border-top: 1px solid var(--slate-300);
+    border-bottom: 1px solid var(--slate-300);
+  }
+
+  .timer-display {
+    min-width: 0;
+    font-size: 2.4rem;
+  }
+
+  .timer-toggle {
+    min-width: 108px;
+  }
+
+  .progress-block {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-column: auto;
+    gap: 12px;
+  }
+
+  .progress-block strong {
+    font-size: 0.82rem;
+  }
+
+  .interval-workspace {
+    padding: 28px 18px 24px;
+  }
+
+  .workspace-heading {
+    display: block;
+    margin-bottom: 22px;
+  }
+
+  .workspace-heading h1 {
+    font-size: clamp(1.65rem, 8vw, 2.1rem);
+  }
+
+  .workspace-heading .text-button {
+    margin-top: 10px;
+  }
+
+  .code-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .code-button {
+    min-height: 92px;
+    justify-content: flex-start;
+    padding: 14px 30px 14px 14px;
+    text-align: left;
+  }
+
+  .code-copy strong {
+    font-size: 1rem;
+  }
+
+  .code-copy span {
+    font-size: 0.82rem;
+  }
+
+  .code-check {
+    top: 50%;
+    right: 9px;
+    width: 25px;
+    height: 25px;
+    transform: translateY(-50%);
+  }
+
+  .mobile-notes {
+    display: block;
+    margin-top: 24px;
+  }
+
+  .mobile-notes .autosave-status {
+    justify-content: flex-start;
+    margin-top: 12px;
+  }
+
+  .observation-sidebar {
+    display: none;
+  }
+
+  .observation-actions {
+    grid-template-columns: minmax(96px, 0.7fr) minmax(170px, 1.5fr);
+    gap: 10px;
+    min-height: 76px;
+    padding: 10px 18px max(10px, env(safe-area-inset-bottom));
+  }
+
+  .observation-actions .button-danger,
+  .observation-actions .autosave-status {
+    display: none;
+  }
+
+  .observation-actions .button {
+    min-width: 0;
+    padding: 0 12px;
+  }
+
+  .continue-button {
+    min-width: 0;
+  }
+
+  .setup-page,
+  .content-page,
+  .summary-page {
+    width: min(100% - 36px, 100%);
+    padding: 40px 0 72px;
+  }
+
+  .setup-intro {
+    margin-bottom: 32px;
+  }
+
+  .setup-intro h1,
+  .page-heading-row h1,
+  .summary-heading h1 {
+    font-size: 2.1rem;
+  }
+
+  .setup-form {
+    gap: 36px;
+  }
+
+  .form-grid-three,
+  .form-grid-two {
+    grid-template-columns: 1fr;
+  }
+
+  .setup-actions {
+    flex-direction: column-reverse;
+  }
+
+  .setup-actions .button {
+    width: 100%;
+  }
+
+  .page-heading-row,
+  .summary-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .summary-actions {
+    width: 100%;
+  }
+
+  .summary-actions .button {
+    flex: 1;
+    padding: 0 12px;
+  }
+
+  .history-row {
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+    padding: 18px 0;
+  }
+
+  .history-date {
+    grid-column: 1;
+  }
+
+  .history-main {
+    grid-column: 1;
+  }
+
+  .history-stat {
+    display: none;
+  }
+
+  .history-actions {
+    grid-row: 1 / span 2;
+    grid-column: 2;
+    align-self: center;
+    flex-direction: column;
+  }
+
+  .history-actions .button {
+    min-width: 64px;
+    padding: 0 10px;
+  }
+
+  .summary-kpis {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .summary-kpis div {
+    padding: 18px 12px;
+  }
+
+  .summary-kpis div:first-child {
+    padding-left: 12px;
+  }
+
+  .summary-kpis strong {
+    font-size: 1.35rem;
+  }
+
+  .summary-panel {
+    padding: 20px 16px;
+  }
+
+  .frequency-table-header {
+    display: none;
+  }
+
+  .frequency-table-row {
+    grid-template-columns: 62px 1fr 54px;
+    gap: 10px;
+    padding: 10px 4px;
+  }
+
+  .frequency-table-row .summary-bar {
+    grid-row: 2;
+    grid-column: 2 / -1;
+  }
+
+  .frequency-table-row > span:last-child {
+    grid-row: 1;
+    grid-column: 3;
+  }
+
+  .modal-backdrop {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .guide-modal {
+    width: 100%;
+    max-height: 92vh;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  }
+
+  .modal-heading,
+  .modal-footer {
+    padding: 20px 18px;
+  }
+
+  .guide-list {
+    grid-template-columns: 1fr;
+    padding: 8px 18px;
+  }
+}
+
+@media (max-width: 380px) {
+  .code-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .code-button {
+    min-height: 72px;
+  }
+
+  .summary-actions {
+    flex-direction: column;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media print {
+  @page {
+    margin: 0.55in;
+    size: letter portrait;
+  }
+
+  body {
+    color: #000;
+    font-size: 10pt;
+  }
+
+  .print-hidden,
+  .app-header,
+  .modal-backdrop {
+    display: none !important;
+  }
+
+  .content-page,
+  .summary-page {
+    width: 100%;
+    padding: 0;
+  }
+
+  .summary-heading {
+    margin-bottom: 18px;
+  }
+
+  .summary-heading h1 {
+    font-size: 22pt;
+  }
+
+  .summary-panel,
+  .method-note {
+    break-inside: avoid;
+    border-color: #aaa;
+  }
+
+  .summary-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .source-footer a {
+    color: #000;
+  }
+}
+
+</style>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <div id="app"></div>
+    <div id="announcer" class="sr-only" aria-live="polite"></div>
+
+    <script>
+(function () {
+  "use strict";
+
+  window.PAITE_DATA = {
+    intervalMinutes: 2,
+    maxClassMinutes: 120,
+    codes: [
+      {
+        code: "PRIOR",
+        shortLabel: "Prior knowledge",
+        label: "Prior Knowledge Assessment",
+        definition:
+          "Measures students’ baseline knowledge or skills through a formal or informal assessment that is turned in.",
+      },
+      {
+        code: "COMP",
+        shortLabel: "Comprehension check",
+        label: "Comprehension Check",
+        definition:
+          "Checks student understanding through an informal, low-stakes assessment that is not turned in.",
+      },
+      {
+        code: "DIVEX",
+        shortLabel: "Diverse examples",
+        label: "Diverse Examples",
+        definition:
+          "Uses examples that present a diversity of people, situations, perspectives, or ideas.",
+      },
+      {
+        code: "MED",
+        shortLabel: "Diverse media",
+        label: "Diverse Visuals or Media",
+        definition:
+          "Uses visuals reflective of diversity or more than one form of media, including physical objects.",
+      },
+      {
+        code: "REAL",
+        shortLabel: "Real-world connection",
+        label: "Real-world Connections",
+        definition:
+          "Applies course material or learning activities beyond the classroom.",
+      },
+      {
+        code: "COM",
+        shortLabel: "Community standards",
+        label: "Community Standards",
+        definition:
+          "References community standards to support accountability for an inclusive learning environment.",
+      },
+      {
+        code: "REL",
+        shortLabel: "Relationship building",
+        label: "Relationship Building",
+        definition:
+          "Allows time for informal student-to-student or student-to-instructor conversation.",
+      },
+      {
+        code: "NAME",
+        shortLabel: "Student names",
+        label: "Student Names",
+        definition: "Calls on students by their names during class.",
+      },
+      {
+        code: "AFFIRM",
+        shortLabel: "Verbal affirmation",
+        label: "Verbal Affirmations",
+        definition:
+          "Uses encouragement and praise that validate students’ contributions.",
+      },
+      {
+        code: "GROW",
+        shortLabel: "Growth mindset",
+        label: "Growth Mindset Language",
+        definition:
+          "Focuses on the process and progress of learning rather than only on outcomes.",
+      },
+      {
+        code: "EXCL",
+        shortLabel: "Address exclusion",
+        label: "Address Exclusionary or Oppressive Acts",
+        definition:
+          "Acknowledges and addresses exclusionary or oppressive acts if they occur during class.",
+      },
+      {
+        code: "IDEN",
+        shortLabel: "Identity questions",
+        label: "Questions Based on Group Identity",
+        definition:
+          "Asks questions based on group identity while avoiding assumptions and forced spokesmanship.",
+      },
+      {
+        code: "EQPART",
+        shortLabel: "Equitable participation",
+        label: "Equitable Participation",
+        definition:
+          "Engages the majority of students in an activity in which they actively participate.",
+      },
+      {
+        code: "ACTIVE",
+        shortLabel: "Active learning",
+        label: "Active Learning",
+        definition:
+          "Uses strategies that engage students with the material and with thinking about what they are doing.",
+      },
+      {
+        code: "CHOICE",
+        shortLabel: "Student choice",
+        label: "Student Choice",
+        definition:
+          "Offers students an opportunity to choose between different activities or options.",
+      },
+      {
+        code: "O",
+        shortLabel: "Other",
+        label: "Other",
+        definition:
+          "Records a teaching behavior not accounted for by another code, such as lecturing.",
+      },
+    ],
+    sources: {
+      spreadsheet:
+        "https://docs.google.com/spreadsheets/d/1BzemuRGpOffpm5ABn-McytCWJumQgvgZZh7Lck23Nho/edit?usp=sharing",
+      codeGuide:
+        "https://inclusiveteachingvisualization.com/wp-content/uploads/2023/04/Copy-of-Protocol-for-Advancing-Inclusive-Teaching-Efforts-PAITE-1.pdf",
+      citation:
+        "Addy, T. M., Younas, H., Cetin, P., Rizk, M., Cham, F., Nwankpa, C., and Borzone, M. (2023). The development of the protocol for advancing inclusive teaching efforts (PAITE). Journal of Educational Research and Practice, 12(0), 1–2.",
+    },
+  };
+})();
+
+</script>
+<script>
+(function () {
+  "use strict";
+
+  const codeList = () => window.PAITE_DATA.codes.map((item) => item.code);
+
+  function recordedIntervals(intervals) {
+    return intervals.filter(
+      (interval) =>
+        Boolean(interval.savedAt) ||
+        interval.codes.length > 0 ||
+        interval.notes.trim().length > 0,
+    );
+  }
+
+  function getCodeTotals(intervals) {
+    const totals = Object.fromEntries(codeList().map((code) => [code, 0]));
+    recordedIntervals(intervals).forEach((interval) => {
+      interval.codes.forEach((code) => {
+        if (Object.prototype.hasOwnProperty.call(totals, code)) {
+          totals[code] += 1;
+        }
+      });
+    });
+    return totals;
+  }
+
+  function getCodePercentages(intervals) {
+    const observed = recordedIntervals(intervals).length;
+    const totals = getCodeTotals(intervals);
+    return Object.fromEntries(
+      Object.entries(totals).map(([code, total]) => [
+        code,
+        observed ? Math.round((total / observed) * 100) : 0,
+      ]),
+    );
+  }
+
+  function getRankedCodes(intervals) {
+    const totals = getCodeTotals(intervals);
+    const percentages = getCodePercentages(intervals);
+    return window.PAITE_DATA.codes
+      .map((item) => ({
+        ...item,
+        total: totals[item.code],
+        percentage: percentages[item.code],
+      }))
+      .sort((a, b) => b.total - a.total || a.code.localeCompare(b.code));
+  }
+
+  function getSegmentTotals(intervals, segmentMinutes = 10) {
+    const segments = new Map();
+    recordedIntervals(intervals).forEach((interval) => {
+      const segmentIndex = Math.floor(interval.startMin / segmentMinutes);
+      if (!segments.has(segmentIndex)) {
+        segments.set(segmentIndex, {
+          index: segmentIndex,
+          startMin: segmentIndex * segmentMinutes,
+          endMin: (segmentIndex + 1) * segmentMinutes,
+          intervalCount: 0,
+          totals: Object.fromEntries(codeList().map((code) => [code, 0])),
+        });
+      }
+      const segment = segments.get(segmentIndex);
+      segment.intervalCount += 1;
+      interval.codes.forEach((code) => {
+        if (Object.prototype.hasOwnProperty.call(segment.totals, code)) {
+          segment.totals[code] += 1;
+        }
+      });
+    });
+    return Array.from(segments.values()).sort((a, b) => a.index - b.index);
+  }
+
+  function getSummary(intervals) {
+    const observed = recordedIntervals(intervals);
+    const ranked = getRankedCodes(intervals);
+    return {
+      recordedCount: observed.length,
+      practiceCount: ranked.filter((item) => item.code !== "O" && item.total > 0)
+        .length,
+      totalCodeMarks: ranked.reduce((sum, item) => sum + item.total, 0),
+      ranked,
+      segments: getSegmentTotals(intervals),
+    };
+  }
+
+  window.PAITE_SCORING = {
+    recordedIntervals,
+    getCodeTotals,
+    getCodePercentages,
+    getRankedCodes,
+    getSegmentTotals,
+    getSummary,
+  };
+})();
+
+</script>
+<script>
+(function () {
+  "use strict";
+
+  const DATA = window.PAITE_DATA;
+  const SCORING = window.PAITE_SCORING;
+  const DRAFT_KEY = "paite-active-observation-v1";
+  const HISTORY_KEY = "paite-observations-v1";
+
+  const app = document.getElementById("app");
+  const announcer = document.getElementById("announcer");
+
+  const state = {
+    screen: "setup",
+    observation: null,
+    selectedHistoryId: null,
+    guideOpen: false,
+    mobileNavOpen: false,
+  };
+
+  function escapeHtml(value) {
+    return String(value ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  function icon(name, className = "icon") {
+    const icons = {
+      check:
+        '<path d="m5 12 4 4L19 6"/><path d="M21 12a9 9 0 1 1-5.3-8.2"/>',
+      checkPlain: '<path d="m5 12 4 4L19 6"/>',
+      pause: '<path d="M8 5v14M16 5v14"/>',
+      play: '<path d="m8 5 11 7-11 7Z"/>',
+      arrowRight: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+      arrowLeft: '<path d="M19 12H5M11 6l-6 6 6 6"/>',
+      trash:
+        '<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v5M14 11v5"/>',
+      menu: '<path d="M4 6h16M4 12h16M4 18h16"/>',
+      close: '<path d="m6 6 12 12M18 6 6 18"/>',
+      info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/>',
+      download: '<path d="M12 3v12M7 10l5 5 5-5M5 21h14"/>',
+      print:
+        '<path d="M7 8V3h10v5M7 17H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2M7 14h10v7H7Z"/>',
+      clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+      users:
+        '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/>',
+      book: '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V4H6.5A2.5 2.5 0 0 0 4 6.5Z"/><path d="M4 6.5v13"/>',
+      user: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+      calendar:
+        '<path d="M6 2v4M18 2v4M3 9h18M5 4h14a2 2 0 0 1 2 2v14H3V6a2 2 0 0 1 2-2Z"/>',
+      edit: '<path d="m14 4 6 6M4 20l4.5-1 11-11a2 2 0 0 0-6-6l-11 11L2 18Z"/>',
+    };
+    return `<svg class="${className}" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${icons[name] || ""}</svg>`;
+  }
+
+  function announce(message) {
+    announcer.textContent = "";
+    window.setTimeout(() => {
+      announcer.textContent = message;
+    }, 30);
+  }
+
+  const storage = (() => {
+    try {
+      const testKey = "__paite_test__";
+      window.localStorage.setItem(testKey, "1");
+      window.localStorage.removeItem(testKey);
+      return window.localStorage;
+    } catch (_error) {
+      const memory = new Map();
+      return {
+        getItem: (key) => (memory.has(key) ? memory.get(key) : null),
+        setItem: (key, value) => memory.set(key, String(value)),
+        removeItem: (key) => memory.delete(key),
+      };
+    }
+  })();
+
+  function safeParse(value, fallback) {
+    try {
+      return value ? JSON.parse(value) : fallback;
+    } catch (_error) {
+      return fallback;
+    }
+  }
+
+  function getHistory() {
+    const history = safeParse(storage.getItem(HISTORY_KEY), []);
+    return Array.isArray(history) ? history : [];
+  }
+
+  function saveHistory(history) {
+    storage.setItem(HISTORY_KEY, JSON.stringify(history));
+  }
+
+  function persistDraft() {
+    if (!state.observation || state.observation.status !== "active") return;
+    state.observation.updatedAt = new Date().toISOString();
+    storage.setItem(DRAFT_KEY, JSON.stringify(state.observation));
+    updateAutosaveLabel();
+  }
+
+  function normalizeObservation(observation) {
+    if (!observation || !observation.metadata || !Array.isArray(observation.intervals)) {
+      return null;
+    }
+    observation.timer = observation.timer || {
+      elapsedSeconds: 0,
+      running: false,
+      lastStartedAt: null,
+    };
+    observation.currentIntervalIndex = Math.max(
+      0,
+      Math.min(observation.currentIntervalIndex || 0, observation.intervals.length - 1),
+    );
+    observation.intervals = observation.intervals.map((interval, index) => ({
+      index,
+      startMin: index * DATA.intervalMinutes,
+      endMin: Math.min(
+        (index + 1) * DATA.intervalMinutes,
+        Number(observation.metadata.classLength),
+      ),
+      codes: Array.isArray(interval.codes) ? interval.codes : [],
+      notes: interval.notes || "",
+      savedAt: interval.savedAt || null,
+    }));
+    return observation;
+  }
+
+  function loadInitialState() {
+    const draft = normalizeObservation(safeParse(storage.getItem(DRAFT_KEY), null));
+    if (draft && draft.status === "active") {
+      state.observation = draft;
+      state.screen = "observation";
+    }
+  }
+
+  function formatTimer(totalSeconds) {
+    const seconds = Math.max(0, Math.floor(totalSeconds));
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const remaining = seconds % 60;
+    if (hours > 0) {
+      return `${hours}:${String(minutes).padStart(2, "0")}:${String(remaining).padStart(2, "0")}`;
+    }
+    return `${String(minutes).padStart(2, "0")}:${String(remaining).padStart(2, "0")}`;
+  }
+
+  function getElapsedSeconds(observation = state.observation) {
+    if (!observation) return 0;
+    const timer = observation.timer;
+    if (!timer.running || !timer.lastStartedAt) return timer.elapsedSeconds || 0;
+    const delta = Math.max(0, Date.now() - new Date(timer.lastStartedAt).getTime());
+    return (timer.elapsedSeconds || 0) + Math.floor(delta / 1000);
+  }
+
+  function syncTimer() {
+    if (!state.observation) return;
+    const timer = state.observation.timer;
+    if (timer.running) {
+      timer.elapsedSeconds = getElapsedSeconds();
+      timer.lastStartedAt = new Date().toISOString();
+    }
+  }
+
+  function intervalLabel(interval) {
+    return `${interval.startMin}–${interval.endMin} min`;
+  }
+
+  function createObservation(formData) {
+    const classLength = Math.min(
+      DATA.maxClassMinutes,
+      Math.max(DATA.intervalMinutes, Number(formData.get("classLength")) || 60),
+    );
+    const intervalCount = Math.ceil(classLength / DATA.intervalMinutes);
+    const now = new Date().toISOString();
+    return {
+      id: `paite-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      status: "active",
+      createdAt: now,
+      updatedAt: now,
+      completedAt: null,
+      metadata: {
+        date: formData.get("date"),
+        course: formData.get("course").trim(),
+        instructor: formData.get("instructor").trim(),
+        instructorId: formData.get("instructorId").trim(),
+        studentCount: Number(formData.get("studentCount")) || 0,
+        observer: formData.get("observer").trim(),
+        classLength,
+        classStructure: formData.get("classStructure"),
+        classroomArrangement: formData.get("classroomArrangement").trim(),
+        groupObservations: formData.get("groupObservations").trim(),
+        accessibilityObservations: formData
+          .get("accessibilityObservations")
+          .trim(),
+      },
+      timer: {
+        elapsedSeconds: 0,
+        running: true,
+        lastStartedAt: now,
+      },
+      currentIntervalIndex: 0,
+      intervals: Array.from({ length: intervalCount }, (_, index) => ({
+        index,
+        startMin: index * DATA.intervalMinutes,
+        endMin: Math.min((index + 1) * DATA.intervalMinutes, classLength),
+        codes: [],
+        notes: "",
+        savedAt: null,
+      })),
+    };
+  }
+
+  function renderHeader() {
+    const inObservation = state.screen === "observation";
+    return `
+      <header class="app-header print-hidden">
+        <button class="brand" data-action="go-setup" aria-label="PAITE home">PAITE</button>
+        <button class="mobile-menu-button" data-action="toggle-mobile-nav" aria-expanded="${state.mobileNavOpen}">
+          ${icon(state.mobileNavOpen ? "close" : "menu")}
+          <span class="sr-only">Toggle navigation</span>
+        </button>
+        <nav class="primary-nav ${state.mobileNavOpen ? "is-open" : ""}" aria-label="Primary navigation">
+          <button class="nav-link ${state.screen === "observation" || state.screen === "setup" ? "is-active" : ""}" data-action="go-observation">
+            Observation
+          </button>
+          <button class="nav-link ${state.screen === "history" ? "is-active" : ""}" data-action="go-history">
+            History
+          </button>
+          <button class="nav-link" data-action="open-guide">Code guide</button>
+        </nav>
+        <div class="header-actions">
+          ${
+            inObservation
+              ? `<button class="button button-primary button-compact" data-action="finish-observation">${icon("checkPlain")} Save &amp; finish</button>`
+              : state.observation && state.observation.status === "active"
+                ? `<button class="button button-primary button-compact" data-action="go-observation">Resume observation</button>`
+                : ""
+          }
+        </div>
+      </header>
+    `;
+  }
+
+  function renderSetup() {
+    const today = new Date().toISOString().slice(0, 10);
+    return `
+      <main id="main-content" class="setup-page">
+        <section class="setup-intro">
+          <h1>Start a classroom observation</h1>
+          <p>Record PAITE teaching behaviors in 2-minute intervals. Your work stays in this browser.</p>
+        </section>
+
+        <form id="setup-form" class="setup-form">
+          <div class="form-section">
+            <div class="section-heading">
+              <h2>Observation details</h2>
+              <button type="button" class="text-button print-hidden" data-action="fill-demo">Use demo data</button>
+            </div>
+            <div class="form-grid form-grid-three">
+              <label class="field">
+                <span>Date</span>
+                <input type="date" name="date" value="${today}" required />
+              </label>
+              <label class="field">
+                <span>Course or class</span>
+                <input type="text" name="course" placeholder="BIO 204" maxlength="80" required />
+              </label>
+              <label class="field">
+                <span>Class length</span>
+                <span class="input-with-suffix">
+                  <input type="number" name="classLength" min="2" max="120" step="2" value="60" required />
+                  <span>minutes</span>
+                </span>
+              </label>
+              <label class="field">
+                <span>Instructor name</span>
+                <input type="text" name="instructor" placeholder="Dr. Rivera" maxlength="80" required />
+              </label>
+              <label class="field">
+                <span>Instructor ID <small>optional</small></span>
+                <input type="text" name="instructorId" placeholder="FAC-1042" maxlength="40" />
+              </label>
+              <label class="field">
+                <span>Number of students</span>
+                <input type="number" name="studentCount" min="0" max="1000" placeholder="24" required />
+              </label>
+              <label class="field">
+                <span>Observer name</span>
+                <input type="text" name="observer" placeholder="M. Chen" maxlength="80" required />
+              </label>
+              <label class="field">
+                <span>Class structure</span>
+                <select name="classStructure" required>
+                  <option value="">Select level</option>
+                  <option value="Low">Low</option>
+                  <option value="Medium">Medium</option>
+                  <option value="High">High</option>
+                </select>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <h2>Class context</h2>
+            <div class="form-grid form-grid-two">
+              <label class="field field-wide">
+                <span>Classroom arrangement</span>
+                <textarea name="classroomArrangement" rows="3" maxlength="500" placeholder="Auditorium seating, seminar table, lab benches in groups of four..."></textarea>
+              </label>
+              <label class="field field-wide">
+                <span>Group observations</span>
+                <textarea name="groupObservations" rows="3" maxlength="500" placeholder="How groups are designed to support inclusion..."></textarea>
+              </label>
+              <label class="field field-wide">
+                <span>Accessibility observations</span>
+                <textarea name="accessibilityObservations" rows="3" maxlength="500" placeholder="Room, materials, or activities that support learner accessibility..."></textarea>
+              </label>
+            </div>
+          </div>
+
+          <div class="setup-actions">
+            <button type="button" class="button button-secondary" data-action="open-guide">Review PAITE codes</button>
+            <button type="submit" class="button button-primary">Start observation ${icon("arrowRight")}</button>
+          </div>
+        </form>
+      </main>
+    `;
+  }
+
+  function renderMetaStrip(observation) {
+    const meta = observation.metadata;
+    const elapsed = getElapsedSeconds(observation);
+    const progress = Math.min(100, Math.round((elapsed / (meta.classLength * 60)) * 100));
+    return `
+      <section class="observation-strip print-hidden" aria-label="Observation status">
+        <div class="meta-list">
+          <div class="meta-item">${icon("user", "meta-icon")}<div><span>Instructor</span><strong>${escapeHtml(meta.instructor)}</strong></div></div>
+          <div class="meta-item">${icon("book", "meta-icon")}<div><span>Course</span><strong>${escapeHtml(meta.course)}</strong></div></div>
+          <div class="meta-item">${icon("users", "meta-icon")}<div><span>Students</span><strong>${meta.studentCount}</strong></div></div>
+          <div class="meta-item meta-observer">${icon("user", "meta-icon")}<div><span>Observer</span><strong>${escapeHtml(meta.observer)}</strong></div></div>
+        </div>
+        <div class="timer-block">
+          <strong id="timer-display" class="timer-display">${formatTimer(elapsed)}</strong>
+          <button class="button button-secondary timer-toggle" data-action="toggle-timer">
+            ${icon(observation.timer.running ? "pause" : "play")}
+            <span>${observation.timer.running ? "Pause" : "Resume"}</span>
+          </button>
+        </div>
+        <div class="progress-block">
+          <strong><span id="current-interval-number">${observation.currentIntervalIndex + 1}</span> of ${observation.intervals.length} intervals</strong>
+          <div class="progress-track" aria-hidden="true"><span id="timer-progress" style="width:${progress}%"></span></div>
+        </div>
+      </section>
+    `;
+  }
+
+  function renderCodeButtons(interval) {
+    return DATA.codes
+      .map((item) => {
+        const selected = interval.codes.includes(item.code);
+        return `
+          <button
+            type="button"
+            class="code-button ${selected ? "is-selected" : ""}"
+            data-action="toggle-code"
+            data-code="${item.code}"
+            aria-pressed="${selected}"
+            title="${escapeHtml(item.definition)}"
+          >
+            <span class="code-copy"><strong>${item.code}</strong><span>${escapeHtml(item.shortLabel)}</span></span>
+            <span class="code-check" aria-hidden="true">${icon("checkPlain")}</span>
+          </button>
+        `;
+      })
+      .join("");
+  }
+
+  function renderRecentIntervals(observation) {
+    const recent = observation.intervals
+      .slice(0, observation.currentIntervalIndex)
+      .filter((interval) => interval.savedAt || interval.codes.length || interval.notes)
+      .slice(-3)
+      .reverse();
+    if (!recent.length) {
+      return '<p class="empty-inline">Saved intervals will appear here.</p>';
+    }
+    return recent
+      .map(
+        (interval) => `
+          <button class="recent-row" data-action="jump-interval" data-index="${interval.index}">
+            <span>${intervalLabel(interval)}</span>
+            <span class="recent-codes">${escapeHtml(interval.codes.join(", ") || "No codes")}</span>
+            <strong>${interval.codes.length}</strong>
+            ${icon("arrowRight")}
+          </button>
+        `,
+      )
+      .join("");
+  }
+
+  function renderFrequencySummary(observation) {
+    const ranked = SCORING.getRankedCodes(observation.intervals)
+      .filter((item) => item.total > 0)
+      .slice(0, 5);
+    if (!ranked.length) {
+      return '<p class="empty-inline">Frequency totals update as you save intervals.</p>';
+    }
+    const max = Math.max(...ranked.map((item) => item.total), 1);
+    return ranked
+      .map(
+        (item) => `
+          <div class="frequency-row">
+            <span>${item.code}</span>
+            <div class="mini-bar"><span style="width:${(item.total / max) * 100}%"></span></div>
+            <strong>${item.total}</strong>
+          </div>
+        `,
+      )
+      .join("");
+  }
+
+  function renderObservation() {
+    const observation = state.observation;
+    if (!observation) return renderSetup();
+    const interval = observation.intervals[observation.currentIntervalIndex];
+    const isLast = observation.currentIntervalIndex === observation.intervals.length - 1;
+    return `
+      <main id="main-content" class="observation-page">
+        ${renderMetaStrip(observation)}
+        <div class="observation-layout">
+          <section class="interval-workspace">
+            <div class="workspace-heading">
+              <div>
+                <h1>Current interval ${intervalLabel(interval)}</h1>
+                <p>Select all inclusive teaching behaviors observed during this interval.</p>
+              </div>
+              <button class="text-button print-hidden" data-action="open-guide">${icon("info")} Code definitions</button>
+            </div>
+            <div class="code-grid" aria-label="PAITE behavior codes">
+              ${renderCodeButtons(interval)}
+            </div>
+            <div class="mobile-notes">
+              <label class="field">
+                <span>Interval notes <small>optional</small></span>
+                <textarea id="mobile-interval-notes" data-role="interval-notes" rows="4" maxlength="1000" placeholder="Add notes about this interval...">${escapeHtml(interval.notes)}</textarea>
+                <small class="character-count"><span data-role="notes-count">${interval.notes.length}</span> / 1000</small>
+              </label>
+              <div class="autosave-status">${icon("check")}<span>Autosaved</span></div>
+            </div>
+          </section>
+
+          <aside class="observation-sidebar">
+            <section class="sidebar-section notes-section">
+              <label class="field">
+                <span>Interval notes (${intervalLabel(interval)})</span>
+                <textarea id="desktop-interval-notes" data-role="interval-notes" rows="5" maxlength="1000" placeholder="Add notes about this interval...">${escapeHtml(interval.notes)}</textarea>
+                <small class="character-count"><span data-role="notes-count">${interval.notes.length}</span> / 1000</small>
+              </label>
+            </section>
+            <section class="sidebar-section">
+              <h2>Recent intervals</h2>
+              <div class="recent-list">${renderRecentIntervals(observation)}</div>
+            </section>
+            <section class="sidebar-section">
+              <h2>Frequency summary</h2>
+              <div class="frequency-list">${renderFrequencySummary(observation)}</div>
+              <button class="text-button summary-link" data-action="view-live-summary">View full frequency table</button>
+            </section>
+          </aside>
+        </div>
+
+        <footer class="observation-actions print-hidden">
+          <button class="button button-secondary" data-action="previous-interval" ${observation.currentIntervalIndex === 0 ? "disabled" : ""}>
+            ${icon("arrowLeft")} Back interval
+          </button>
+          <button class="button button-danger" data-action="clear-interval">${icon("trash")} Clear interval</button>
+          <div id="autosave-label" class="autosave-status">${icon("check")}<span>Autosaved just now</span></div>
+          <button class="button button-primary continue-button" data-action="save-continue">
+            ${isLast ? "Save and review" : "Save interval and continue"} ${icon("arrowRight")}
+          </button>
+        </footer>
+      </main>
+    `;
+  }
+
+  function renderHistory() {
+    const history = getHistory().sort(
+      (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+    );
+    return `
+      <main id="main-content" class="history-page content-page">
+        <div class="page-heading-row">
+          <div><h1>Observation history</h1><p>Completed observations saved in this browser.</p></div>
+          <button class="button button-primary" data-action="new-observation">New observation</button>
+        </div>
+        ${
+          history.length
+            ? `<div class="history-list">${history.map(renderHistoryItem).join("")}</div>`
+            : `<section class="empty-state">
+                ${icon("clock", "empty-icon")}
+                <h2>No completed observations yet</h2>
+                <p>Finish an observation to see its frequency summary here.</p>
+                <button class="button button-primary" data-action="go-observation">Start an observation</button>
+              </section>`
+        }
+      </main>
+    `;
+  }
+
+  function renderHistoryItem(observation) {
+    const summary = SCORING.getSummary(observation.intervals || []);
+    const meta = observation.metadata;
+    return `
+      <article class="history-row">
+        <div class="history-date"><strong>${formatShortDate(meta.date)}</strong><span>${meta.classLength} min</span></div>
+        <div class="history-main"><h2>${escapeHtml(meta.course)}</h2><p>${escapeHtml(meta.instructor)} · Observed by ${escapeHtml(meta.observer)}</p></div>
+        <div class="history-stat"><strong>${summary.recordedCount}</strong><span>intervals</span></div>
+        <div class="history-stat"><strong>${summary.practiceCount}</strong><span>practices</span></div>
+        <div class="history-actions print-hidden">
+          <button class="button button-secondary button-small" data-action="view-history" data-id="${observation.id}">View</button>
+          <button class="icon-button" data-action="reopen-history" data-id="${observation.id}" title="Reopen observation">${icon("edit")}<span class="sr-only">Reopen</span></button>
+          <button class="icon-button icon-button-danger" data-action="delete-history" data-id="${observation.id}" title="Delete observation">${icon("trash")}<span class="sr-only">Delete</span></button>
+        </div>
+      </article>
+    `;
+  }
+
+  function formatShortDate(dateString) {
+    if (!dateString) return "No date";
+    const date = new Date(`${dateString}T12:00:00`);
+    return new Intl.DateTimeFormat("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    }).format(date);
+  }
+
+  function getSummaryObservation() {
+    if (state.selectedHistoryId) {
+      return getHistory().find((item) => item.id === state.selectedHistoryId) || null;
+    }
+    return state.observation;
+  }
+
+  function renderSummary() {
+    const observation = getSummaryObservation();
+    if (!observation) return renderHistory();
+    const meta = observation.metadata;
+    const summary = SCORING.getSummary(observation.intervals);
+    const ranked = summary.ranked;
+    const maxTotal = Math.max(...ranked.map((item) => item.total), 1);
+    const recorded = SCORING.recordedIntervals(observation.intervals);
+    return `
+      <main id="main-content" class="summary-page content-page">
+        <div class="summary-heading">
+          <div>
+            <p class="summary-date">${formatShortDate(meta.date)}</p>
+            <h1>${escapeHtml(meta.course)} observation summary</h1>
+            <p>${escapeHtml(meta.instructor)} · ${meta.studentCount} students · Observed by ${escapeHtml(meta.observer)}</p>
+          </div>
+          <div class="summary-actions print-hidden">
+            <button class="button button-secondary" data-action="export-csv">${icon("download")} Export CSV</button>
+            <button class="button button-primary" data-action="print-summary">${icon("print")} Print or save PDF</button>
+          </div>
+        </div>
+
+        <section class="summary-kpis" aria-label="Observation totals">
+          <div><strong>${summary.recordedCount}</strong><span>Recorded intervals</span></div>
+          <div><strong>${summary.practiceCount} of 15</strong><span>PAITE practices observed</span></div>
+          <div><strong>${summary.totalCodeMarks}</strong><span>Total behavior marks</span></div>
+          <div><strong>${formatTimer(getElapsedSeconds(observation))}</strong><span>Elapsed observation time</span></div>
+        </section>
+
+        <section class="summary-panel">
+          <div class="panel-heading"><div><h2>Behavior frequency</h2><p>Count and share of ${summary.recordedCount || 0} recorded intervals.</p></div></div>
+          <div class="frequency-table" role="table" aria-label="PAITE behavior frequency">
+            <div class="frequency-table-header" role="row"><span>Code</span><span>Behavior</span><span>Frequency</span><span>Intervals</span></div>
+            ${ranked
+              .map(
+                (item) => `
+                  <div class="frequency-table-row" role="row">
+                    <strong>${item.code}</strong>
+                    <span>${escapeHtml(item.label)}</span>
+                    <span class="summary-bar"><i style="width:${(item.total / maxTotal) * 100}%"></i></span>
+                    <span><strong>${item.total}</strong> <small>${item.percentage}%</small></span>
+                  </div>
+                `,
+              )
+              .join("")}
+          </div>
+        </section>
+
+        <section class="summary-panel segment-panel">
+          <div class="panel-heading"><div><h2>10-minute pattern</h2><p>Behavior counts grouped by the source worksheet’s 10-minute sections.</p></div></div>
+          ${renderSegmentTable(summary.segments)}
+        </section>
+
+        <section class="summary-grid">
+          <div class="summary-panel context-panel">
+            <h2>Class context</h2>
+            <dl class="context-list">
+              <div><dt>Class structure</dt><dd>${escapeHtml(meta.classStructure || "Not recorded")}</dd></div>
+              <div><dt>Classroom arrangement</dt><dd>${escapeHtml(meta.classroomArrangement || "Not recorded")}</dd></div>
+              <div><dt>Group observations</dt><dd>${escapeHtml(meta.groupObservations || "Not recorded")}</dd></div>
+              <div><dt>Accessibility observations</dt><dd>${escapeHtml(meta.accessibilityObservations || "Not recorded")}</dd></div>
+            </dl>
+          </div>
+          <div class="summary-panel notes-panel">
+            <h2>Interval notes</h2>
+            ${
+              recorded.some((item) => item.notes.trim())
+                ? `<div class="summary-notes-list">${recorded
+                    .filter((item) => item.notes.trim())
+                    .map(
+                      (item) => `<div><strong>${intervalLabel(item)}</strong><p>${escapeHtml(item.notes)}</p></div>`,
+                    )
+                    .join("")}</div>`
+                : '<p class="empty-inline">No interval notes were recorded.</p>'
+            }
+          </div>
+        </section>
+
+        <section class="method-note">
+          ${icon("info")}
+          <div><h2>How to read this summary</h2><p>PAITE records the frequency of observed teaching behaviors. These counts are descriptive. They are not a composite quality score. Context-dependent codes, including EXCL, may remain at zero when no relevant event occurs.</p></div>
+        </section>
+
+        <footer class="source-footer">
+          <p>${escapeHtml(DATA.sources.citation)}</p>
+          <a href="${DATA.sources.codeGuide}" target="_blank" rel="noreferrer">PAITE code guide</a>
+        </footer>
+      </main>
+    `;
+  }
+
+  function renderSegmentTable(segments) {
+    if (!segments.length) return '<p class="empty-inline">No recorded intervals yet.</p>';
+    const activeCodes = DATA.codes
+      .filter((item) => segments.some((segment) => segment.totals[item.code] > 0))
+      .map((item) => item.code);
+    return `
+      <div class="segment-table-wrap">
+        <table class="segment-table">
+          <thead><tr><th>Segment</th><th>Intervals</th>${activeCodes.map((code) => `<th>${code}</th>`).join("")}</tr></thead>
+          <tbody>${segments
+            .map(
+              (segment) => `<tr><th>${segment.startMin}–${segment.endMin} min</th><td>${segment.intervalCount}</td>${activeCodes
+                .map((code) => `<td>${segment.totals[code]}</td>`)
+                .join("")}</tr>`,
+            )
+            .join("")}</tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  function renderGuide() {
+    if (!state.guideOpen) return "";
+    return `
+      <div class="modal-backdrop" data-action="close-guide">
+        <section class="guide-modal" role="dialog" aria-modal="true" aria-labelledby="guide-title" data-modal-panel>
+          <div class="modal-heading">
+            <div><h1 id="guide-title">PAITE code guide</h1><p>Use each code once per 2-minute interval when the behavior occurs.</p></div>
+            <button class="icon-button" data-action="close-guide">${icon("close")}<span class="sr-only">Close</span></button>
+          </div>
+          <div class="guide-list">
+            ${DATA.codes
+              .map(
+                (item) => `<article><strong>${item.code}</strong><div><h2>${escapeHtml(item.label)}</h2><p>${escapeHtml(item.definition)}</p></div></article>`,
+              )
+              .join("")}
+          </div>
+          <div class="modal-footer">
+            <a class="text-link" href="${DATA.sources.codeGuide}" target="_blank" rel="noreferrer">Open source code guide</a>
+            <button class="button button-primary" data-action="close-guide">Done</button>
+          </div>
+        </section>
+      </div>
+    `;
+  }
+
+  function render() {
+    let content = "";
+    if (state.screen === "observation") content = renderObservation();
+    else if (state.screen === "history") content = renderHistory();
+    else if (state.screen === "summary") content = renderSummary();
+    else content = renderSetup();
+
+    app.innerHTML = `${renderHeader()}${content}${renderGuide()}`;
+    document.body.classList.toggle("modal-open", state.guideOpen);
+    state.mobileNavOpen = false;
+  }
+
+  function updateTimerDOM() {
+    if (state.screen !== "observation" || !state.observation) return;
+    const elapsed = getElapsedSeconds();
+    const display = document.getElementById("timer-display");
+    const progress = document.getElementById("timer-progress");
+    if (display) display.textContent = formatTimer(elapsed);
+    if (progress) {
+      progress.style.width = `${Math.min(100, (elapsed / (state.observation.metadata.classLength * 60)) * 100)}%`;
+    }
+    if (
+      elapsed >= state.observation.metadata.classLength * 60 &&
+      state.observation.timer.running
+    ) {
+      syncTimer();
+      state.observation.timer.running = false;
+      state.observation.timer.lastStartedAt = null;
+      persistDraft();
+      announce("The planned class length has been reached. The timer is paused.");
+      render();
+      return;
+    }
+
+    const timedIndex = Math.min(
+      Math.floor(elapsed / (DATA.intervalMinutes * 60)),
+      state.observation.intervals.length - 1,
+    );
+    if (timedIndex > state.observation.currentIntervalIndex) {
+      const current = state.observation.intervals[state.observation.currentIntervalIndex];
+      current.savedAt = current.savedAt || new Date().toISOString();
+      state.observation.currentIntervalIndex = timedIndex;
+      persistDraft();
+      announce(`Moved to interval ${intervalLabel(state.observation.intervals[timedIndex])}.`);
+      render();
+    }
+  }
+
+  function updateAutosaveLabel() {
+    const label = document.getElementById("autosave-label");
+    if (label) label.querySelector("span").textContent = "Autosaved just now";
+  }
+
+  function currentInterval() {
+    return state.observation.intervals[state.observation.currentIntervalIndex];
+  }
+
+  function saveCurrentInterval() {
+    const interval = currentInterval();
+    interval.savedAt = new Date().toISOString();
+    persistDraft();
+  }
+
+  function finishObservation() {
+    if (!state.observation) return;
+    syncTimer();
+    saveCurrentInterval();
+    const observation = state.observation;
+    observation.status = "completed";
+    observation.completedAt = new Date().toISOString();
+    observation.updatedAt = observation.completedAt;
+    observation.timer.running = false;
+    observation.timer.lastStartedAt = null;
+    const history = getHistory();
+    const existingIndex = history.findIndex((item) => item.id === observation.id);
+    if (existingIndex >= 0) history[existingIndex] = observation;
+    else history.unshift(observation);
+    saveHistory(history);
+    storage.removeItem(DRAFT_KEY);
+    state.selectedHistoryId = observation.id;
+    state.screen = "summary";
+    render();
+    window.scrollTo(0, 0);
+    announce("Observation saved. Summary ready.");
+  }
+
+  function goToScreen(screen) {
+    state.screen = screen;
+    state.selectedHistoryId = null;
+    render();
+    window.scrollTo(0, 0);
+  }
+
+  function fillDemoData() {
+    const form = document.getElementById("setup-form");
+    if (!form) return;
+    form.elements.course.value = "BIO 204";
+    form.elements.instructor.value = "Dr. Rivera";
+    form.elements.instructorId.value = "FAC-1042";
+    form.elements.studentCount.value = "24";
+    form.elements.observer.value = "M. Chen";
+    form.elements.classLength.value = "90";
+    form.elements.classStructure.value = "Medium";
+    form.elements.classroomArrangement.value =
+      "Seminar tables arranged in four groups with a clear center aisle.";
+    form.elements.groupObservations.value =
+      "Groups were assigned before class and included rotating discussion roles.";
+    form.elements.accessibilityObservations.value =
+      "Slides used high contrast and captions. Materials were shared in advance.";
+    announce("Demo observation details added.");
+  }
+
+  function handleAction(action, target) {
+    if (action === "toggle-mobile-nav") {
+      state.mobileNavOpen = !state.mobileNavOpen;
+      render();
+      return;
+    }
+    if (action === "open-guide") {
+      state.guideOpen = true;
+      render();
+      window.setTimeout(() => document.querySelector(".guide-modal .icon-button")?.focus(), 30);
+      return;
+    }
+    if (action === "close-guide") {
+      state.guideOpen = false;
+      render();
+      return;
+    }
+    if (action === "go-history") return goToScreen("history");
+    if (action === "go-observation") {
+      return goToScreen(state.observation?.status === "active" ? "observation" : "setup");
+    }
+    if (action === "go-setup" || action === "new-observation") {
+      if (
+        state.observation?.status === "active" &&
+        !window.confirm("Start a new observation and remove the current draft from this browser?")
+      ) {
+        return;
+      }
+      if (state.observation?.status === "active") storage.removeItem(DRAFT_KEY);
+      state.observation = null;
+      return goToScreen("setup");
+    }
+    if (action === "fill-demo") return fillDemoData();
+    if (!state.observation && action !== "view-history") return;
+
+    if (action === "toggle-timer") {
+      const timer = state.observation.timer;
+      if (timer.running) {
+        timer.elapsedSeconds = getElapsedSeconds();
+        timer.running = false;
+        timer.lastStartedAt = null;
+      } else {
+        timer.running = true;
+        timer.lastStartedAt = new Date().toISOString();
+      }
+      persistDraft();
+      render();
+      return;
+    }
+    if (action === "toggle-code") {
+      const code = target.dataset.code;
+      const interval = currentInterval();
+      interval.codes = interval.codes.includes(code)
+        ? interval.codes.filter((item) => item !== code)
+        : [...interval.codes, code];
+      persistDraft();
+      render();
+      document.querySelector(`[data-code="${code}"]`)?.focus();
+      announce(`${code} ${interval.codes.includes(code) ? "selected" : "cleared"}.`);
+      return;
+    }
+    if (action === "previous-interval") {
+      saveCurrentInterval();
+      state.observation.currentIntervalIndex = Math.max(
+        0,
+        state.observation.currentIntervalIndex - 1,
+      );
+      persistDraft();
+      render();
+      return;
+    }
+    if (action === "jump-interval") {
+      saveCurrentInterval();
+      state.observation.currentIntervalIndex = Number(target.dataset.index);
+      persistDraft();
+      render();
+      return;
+    }
+    if (action === "clear-interval") {
+      if (!window.confirm("Clear the selected codes and notes for this interval?")) return;
+      const interval = currentInterval();
+      interval.codes = [];
+      interval.notes = "";
+      interval.savedAt = null;
+      persistDraft();
+      render();
+      announce("Interval cleared.");
+      return;
+    }
+    if (action === "save-continue") {
+      saveCurrentInterval();
+      if (state.observation.currentIntervalIndex < state.observation.intervals.length - 1) {
+        state.observation.currentIntervalIndex += 1;
+        persistDraft();
+        render();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        announce(`Saved. Current interval is ${intervalLabel(currentInterval())}.`);
+      } else {
+        finishObservation();
+      }
+      return;
+    }
+    if (action === "finish-observation") return finishObservation();
+    if (action === "view-live-summary") {
+      saveCurrentInterval();
+      state.selectedHistoryId = null;
+      state.screen = "summary";
+      render();
+      window.scrollTo(0, 0);
+      return;
+    }
+    if (action === "view-history") {
+      state.selectedHistoryId = target.dataset.id;
+      state.screen = "summary";
+      render();
+      window.scrollTo(0, 0);
+      return;
+    }
+    if (action === "reopen-history") {
+      const item = getHistory().find((entry) => entry.id === target.dataset.id);
+      if (!item) return;
+      const copy = normalizeObservation(JSON.parse(JSON.stringify(item)));
+      copy.status = "active";
+      copy.completedAt = null;
+      copy.timer.running = false;
+      copy.timer.lastStartedAt = null;
+      state.observation = copy;
+      state.screen = "observation";
+      state.selectedHistoryId = null;
+      persistDraft();
+      render();
+      announce("Observation reopened as an active draft.");
+      return;
+    }
+    if (action === "delete-history") {
+      const history = getHistory();
+      const item = history.find((entry) => entry.id === target.dataset.id);
+      if (!item) return;
+      if (!window.confirm(`Delete the saved observation for ${item.metadata.course}?`)) return;
+      saveHistory(history.filter((entry) => entry.id !== item.id));
+      render();
+      announce("Saved observation deleted.");
+      return;
+    }
+    if (action === "export-csv") return exportCsv();
+    if (action === "print-summary") return window.print();
+  }
+
+  function exportCsv() {
+    const observation = getSummaryObservation();
+    if (!observation) return;
+    const meta = observation.metadata;
+    const rows = [
+      ["PAITE Classroom Observation"],
+      ["Date", meta.date],
+      ["Course", meta.course],
+      ["Instructor", meta.instructor],
+      ["Instructor ID", meta.instructorId],
+      ["Students", meta.studentCount],
+      ["Observer", meta.observer],
+      ["Class length", meta.classLength],
+      [],
+      ["Interval", ...DATA.codes.map((item) => item.code), "Comments"],
+      ...observation.intervals.map((interval) => [
+        intervalLabel(interval),
+        ...DATA.codes.map((item) => (interval.codes.includes(item.code) ? 1 : "")),
+        interval.notes,
+      ]),
+      [],
+      [
+        "TOTALS",
+        ...DATA.codes.map(
+          (item) => SCORING.getCodeTotals(observation.intervals)[item.code],
+        ),
+        "",
+      ],
+    ];
+    const csv = rows
+      .map((row) =>
+        row
+          .map((cell) => `"${String(cell ?? "").replaceAll('"', '""')}"`)
+          .join(","),
+      )
+      .join("\r\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `paite-${meta.course || "observation"}-${meta.date || "export"}`
+      .toLowerCase()
+      .replace(/[^a-z0-9-]+/g, "-")
+      .replace(/-+/g, "-")
+      .concat(".csv");
+    link.click();
+    URL.revokeObjectURL(link.href);
+    announce("CSV export created.");
+  }
+
+  app.addEventListener("submit", (event) => {
+    if (event.target.id !== "setup-form") return;
+    event.preventDefault();
+    const formData = new FormData(event.target);
+    state.observation = createObservation(formData);
+    state.screen = "observation";
+    persistDraft();
+    render();
+    window.scrollTo(0, 0);
+    announce("Observation started. Timer running.");
+  });
+
+  app.addEventListener("click", (event) => {
+    if (event.target.closest("[data-modal-panel]") && !event.target.closest("[data-action]")) {
+      event.stopPropagation();
+      return;
+    }
+    const target = event.target.closest("[data-action]");
+    if (!target) return;
+    const action = target.dataset.action;
+    if (action === "close-guide" && event.target.closest("[data-modal-panel]") && !event.target.closest("button")) {
+      return;
+    }
+    handleAction(action, target);
+  });
+
+  app.addEventListener("input", (event) => {
+    const target = event.target;
+    if (target.dataset.role !== "interval-notes" || !state.observation) return;
+    currentInterval().notes = target.value;
+    document.querySelectorAll('[data-role="notes-count"]').forEach((node) => {
+      node.textContent = String(target.value.length);
+    });
+    document.querySelectorAll('[data-role="interval-notes"]').forEach((node) => {
+      if (node !== target) node.value = target.value;
+    });
+    persistDraft();
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && state.guideOpen) {
+      state.guideOpen = false;
+      render();
+    }
+  });
+
+  loadInitialState();
+  render();
+  window.setInterval(updateTimerDOM, 1000);
+})();
+
+</script>
+  </body>
+</html>
