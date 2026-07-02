@@ -3163,9 +3163,9 @@ h2 {
     const summary = SCORING.getSummary(observation.intervals);
     const ranked = summary.ranked;
     const topMethods = ranked.filter((item) => item.total > 0 && item.code !== "O").slice(0, 3);
-    const growthAreas = ranked
-      .filter((item) => item.total === 0 && !["O", "EXCL", "IDEN"].includes(item.code))
-      .slice(0, 5);
+    const growthAreas = ranked.filter(
+      (item) => item.total === 0 && item.code !== "O",
+    );
     const recorded = SCORING.recordedIntervals(observation.intervals);
     const notedIntervals = recorded.filter((item) => item.notes.trim());
     const frequencyRows = ranked
@@ -3265,7 +3265,7 @@ ${
 <ul>${growthAreas.map((item) => `<li><strong>${escapeHtml(item.label)}</strong> (${item.code}): ${escapeHtml(item.definition)}</li>`).join("")}</ul>`
     : "<p>All applicable PAITE practices were observed at least once. Continue reinforcing the practices above.</p>"
 }
-<p><em>Note: PAITE counts are descriptive, not a composite quality score. Context-dependent codes, including EXCL and IDEN, may remain at zero when no relevant event occurs and are excluded from suggested growth areas.</em></p>
+<p><em>Note: PAITE counts are descriptive, not a composite quality score. Context-dependent codes, including EXCL and IDEN, may remain at zero when no relevant event occurred during the observed session.</em></p>
 
 <p class="citation">${escapeHtml(DATA.sources.citation)}</p>
 </body>
