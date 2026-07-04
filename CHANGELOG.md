@@ -6,6 +6,19 @@ Each entry lists what changed and when it went live. Times are US Eastern (UTC-4
 
 ---
 
+## v1.3 — July 4, 2026, 12:50 PM
+
+- Setup form now uses a single required "Instructor Name or ID" field. The separate instructor name field was removed.
+- Added an optional instructor email field.
+- Added a pre-observation notes field for the instructor's teaching goals for the session.
+- Class structure and class context are now optional at setup and editable at any point during the observation through a new "Class details & context" panel.
+- Relabeled "Number of students" to "Number of students present."
+- Growth suggestions in the report are now capped at 3 top practices to consider, and always exclude EXCL and IDEN. Those two codes still appear in the behavior frequency table. (Reverses the July 2 change that added them to suggestions and removed the cap.)
+- Added report content checkboxes so the observer chooses which graphs and tables go in the downloaded report: code distribution chart, behavior frequency, 10-minute pattern, notes, class context, and suggestions.
+- Added the 10-minute pattern table to the downloadable report.
+- Added an "Email report" button that downloads the report and opens the observer's mail app addressed to the instructor, ready to attach and send.
+- Added a "Clear all data" button on the setup and history screens that wipes the active draft and all saved observations from the browser.
+
 ## v1.2 — July 2, 2026, 2:50 PM
 
 - Growth suggestions in the post-observation report now include EXCL (Address Exclusionary Acts) and IDEN (Questions Based on Group Identity) when they were not observed.
