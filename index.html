@@ -1897,6 +1897,16 @@ h2 {
   margin-bottom: 18px;
 }
 
+.goto-interval select {
+  padding: 10px 12px;
+  border: 1px solid var(--slate-200, #d5ddda);
+  border-radius: 10px;
+  background: #fff;
+  font: inherit;
+  color: var(--navy-900);
+  max-width: 220px;
+}
+
 .viz-output {
   display: flex;
   flex-direction: column;
@@ -1922,6 +1932,36 @@ h2 {
   font-size: 0.85rem;
   color: var(--color-text-muted, #4c5a56);
   font-style: italic;
+}
+
+.viz-help {
+  width: 100%;
+  margin-top: 8px;
+  border-top: 1px solid var(--slate-200, #d5ddda);
+  padding-top: 14px;
+}
+
+.viz-help > summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--navy-900);
+}
+
+.viz-help-list {
+  margin: 12px 0 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 0.9rem;
+  color: var(--navy-900);
+}
+
+.viz-help-note {
+  margin-top: 12px;
+  font-size: 0.82rem;
+  font-style: italic;
+  color: var(--color-text-muted, #4c5a56);
 }
 
 .viz-table {
@@ -2225,7 +2265,7 @@ h2 {
     selectedHistoryId: null,
     guideOpen: false,
     mobileNavOpen: false,
-    chartType: "pie",
+    chartType: "donut",
     reportOptions: {
       pie: true,
       donut: false,
@@ -2282,6 +2322,7 @@ h2 {
         '<path d="M6 2v4M18 2v4M3 9h18M5 4h14a2 2 0 0 1 2 2v14H3V6a2 2 0 0 1 2-2Z"/>',
       edit: '<path d="m14 4 6 6M4 20l4.5-1 11-11a2 2 0 0 0-6-6l-11 11L2 18Z"/>',
       mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>',
+      refresh: '<path d="M21 12a9 9 0 1 1-2.6-6.3M21 3v4h-4"/>',
     };
     return `<svg class="${className}" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${icons[name] || ""}</svg>`;
   }
@@ -2665,9 +2706,9 @@ h2 {
     const level = (value) =>
       meta.classStructure === value ? " selected" : "";
     return `
-      <details class="sidebar-section context-editor">
+      <details class="sidebar-section context-editor" open>
         <summary>Class details &amp; context</summary>
-        <p class="context-editor-hint">Update these at any point during the observation.</p>
+        <p class="context-editor-hint">Revise the first-page class context boxes here at any time during the observation.</p>
         <label class="field">
           <span>Class structure</span>
           <select data-meta="classStructure">
@@ -2752,7 +2793,19 @@ h2 {
           <button class="button button-secondary" data-action="previous-interval" ${observation.currentIntervalIndex === 0 ? "disabled" : ""}>
             ${icon("arrowLeft")} Back interval
           </button>
+          <label class="goto-interval">
+            <span class="sr-only">Go to interval</span>
+            <select data-role="goto-interval" aria-label="Go to interval">
+              ${observation.intervals
+                .map(
+                  (interval, index) =>
+                    `<option value="${index}" ${index === observation.currentIntervalIndex ? "selected" : ""}>Interval ${index + 1} (${intervalLabel(interval)})</option>`,
+                )
+                .join("")}
+            </select>
+          </label>
           <button class="button button-danger" data-action="clear-interval">${icon("trash")} Clear interval</button>
+          <button class="button button-danger" data-action="reset-observation">${icon("refresh")} Reset</button>
           <div id="autosave-label" class="autosave-status">${icon("check")}<span>Autosaved just now</span></div>
           <button class="button button-primary continue-button" data-action="save-continue">
             ${isLast ? "Save and review" : "Save interval and continue"} ${icon("arrowRight")}
@@ -3041,7 +3094,6 @@ h2 {
   const SESSION_COLORS = ["#007b77", "#1971c2", "#e8590c", "#9c36b5", "#2f9e44", "#c2255c"];
   const CHART_TYPES = [
     { key: "donut", label: "Donut chart" },
-    { key: "pie", label: "Pie chart" },
     { key: "categorical", label: "Categorical pie chart" },
     { key: "barh", label: "Bar chart (horizontal)" },
     { key: "barv", label: "Bar chart (vertical)" },
@@ -3342,7 +3394,11 @@ h2 {
 
   function chartTitle(key) {
     const found = CHART_TYPES.find((t) => t.key === key);
-    return found ? found.label : "Chart";
+    if (found) return found.label;
+    // Pie is shown by default under Code Distribution and stays available for the
+    // report, so it is intentionally not in the explorer dropdown (CHART_TYPES).
+    const extra = { pie: "Pie chart" };
+    return extra[key] || "Chart";
   }
 
   function renderVizPanel(observation) {
@@ -3356,6 +3412,18 @@ h2 {
           </select>
         </label>
         <div id="viz-output" class="viz-output">${renderChartByType(state.chartType, observation)}</div>
+        <details class="viz-help">
+          <summary>How to read these charts</summary>
+          <ul class="viz-help-list">
+            <li><strong>Donut and pie:</strong> the share each code holds out of all recorded behavior marks.</li>
+            <li><strong>Categorical pie:</strong> the same marks grouped into the five PAITE categories (Science of Learning, Social Psychological, Classroom Climate, UDL &amp; CRT, Other).</li>
+            <li><strong>Bar charts:</strong> how many times each code was recorded. Horizontal and vertical show the same counts in different layouts.</li>
+            <li><strong>Longitudinal bar:</strong> compares each code across your saved observation sessions, oldest to newest, to show change over time.</li>
+            <li><strong>Table:</strong> the raw occurrence count for every code.</li>
+            <li><strong>Stacked bar by time:</strong> behavior marks per 10-minute interval, stacked by code. The percent version scales each interval to 100% so you compare the mix, not the totals.</li>
+          </ul>
+          <p class="viz-help-note">These counts are descriptive. They are not a quality score. Context-dependent codes may sit at zero when no relevant event occurred.</p>
+        </details>
       </section>
     `;
   }
@@ -3635,6 +3703,31 @@ h2 {
       persistDraft();
       render();
       announce("Interval cleared.");
+      return;
+    }
+    if (action === "reset-observation") {
+      if (
+        !window.confirm(
+          "Reset the entire observation? This clears every code, note, and the timer so you can start over. Your setup details are kept.",
+        )
+      ) {
+        return;
+      }
+      state.observation.intervals.forEach((interval) => {
+        interval.codes = [];
+        interval.notes = "";
+        interval.savedAt = null;
+      });
+      state.observation.currentIntervalIndex = 0;
+      state.observation.timer = {
+        elapsedSeconds: 0,
+        running: true,
+        lastStartedAt: new Date().toISOString(),
+      };
+      persistDraft();
+      render();
+      window.scrollTo(0, 0);
+      announce("Observation reset. Timer restarted at the first interval.");
       return;
     }
     if (action === "save-continue") {
@@ -4040,6 +4133,14 @@ ${
       if (output && observation) {
         output.innerHTML = renderChartByType(state.chartType, observation);
       }
+    }
+    if (event.target.dataset.role === "goto-interval" && state.observation) {
+      saveCurrentInterval();
+      state.observation.currentIntervalIndex = Number(event.target.value);
+      persistDraft();
+      render();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      announce(`Moved to interval ${intervalLabel(currentInterval())}.`);
     }
   });
 

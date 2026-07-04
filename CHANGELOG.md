@@ -6,6 +6,14 @@ Each entry lists what changed and when it went live. Times are US Eastern (UTC-4
 
 ---
 
+## v1.5 — July 4, 2026, 2:40 PM
+
+- The "Class details & context" panel now opens by default during an observation, so you can revise the first-page context boxes at any time.
+- Added a Reset button next to Clear interval. It clears every code, note, and the timer and returns you to the first interval, keeping your setup details.
+- Added a "Go to interval" menu on the bottom toolbar to jump straight to any interval.
+- Removed Pie chart from the Data visualizations dropdown. The pie stays as the default Code distribution chart and remains available for the report.
+- Added a "How to read these charts" guide under the visualization panel.
+
 ## v1.4 — July 4, 2026, 1:36 PM
 
 - Added a data visualization generator to the summary. Pick a chart type and view it live: donut, pie, categorical pie (grouped into the 5 PAITE categories), horizontal bar, vertical bar, longitudinal bar, table, stacked bar by time, and stacked bar percent by time.
