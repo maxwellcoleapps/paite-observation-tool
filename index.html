@@ -1854,6 +1854,12 @@ h2 {
   margin-bottom: 14px;
 }
 
+.report-options-subhead {
+  margin: 18px 0 10px;
+  font-size: 0.95rem;
+  color: var(--navy-900);
+}
+
 .report-options-panel .report-options-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -1884,6 +1890,55 @@ h2 {
 
 .danger-text {
   color: var(--color-danger, #e03131);
+}
+
+.viz-select-field {
+  max-width: 320px;
+  margin-bottom: 18px;
+}
+
+.viz-output {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.viz-figure {
+  align-self: center;
+}
+
+.viz-scroll {
+  width: 100%;
+  overflow-x: auto;
+  padding-bottom: 6px;
+}
+
+.viz-scroll svg {
+  max-width: none;
+}
+
+.viz-note {
+  font-size: 0.85rem;
+  color: var(--color-text-muted, #4c5a56);
+  font-style: italic;
+}
+
+.viz-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.9rem;
+}
+
+.viz-table th,
+.viz-table td {
+  border: 1px solid var(--slate-200, #d5ddda);
+  padding: 6px 10px;
+  text-align: left;
+}
+
+.viz-table th {
+  background: #f2f6f5;
 }
 
 @media (max-width: 640px) {
@@ -2170,8 +2225,16 @@ h2 {
     selectedHistoryId: null,
     guideOpen: false,
     mobileNavOpen: false,
+    chartType: "pie",
     reportOptions: {
-      chart: true,
+      pie: true,
+      donut: false,
+      categorical: false,
+      barh: false,
+      barv: false,
+      longitudinal: false,
+      stacked: false,
+      stackedpct: false,
       frequency: true,
       segments: true,
       notes: true,
@@ -2802,6 +2865,8 @@ h2 {
           </div>
         </section>
 
+        ${renderVizPanel(observation)}
+
         <section class="summary-panel">
           <div class="panel-heading"><div><h2>Behavior frequency</h2><p>Count and share of ${summary.recordedCount || 0} recorded intervals.</p></div></div>
           <div class="frequency-table" role="table" aria-label="PAITE behavior frequency">
@@ -2873,9 +2938,20 @@ h2 {
       </label>`;
     return `
       <section class="summary-panel report-options-panel print-hidden">
-        <div class="panel-heading"><div><h2>Report contents</h2><p>Choose the graphs and tables to include in the downloaded and emailed report.</p></div></div>
+        <div class="panel-heading"><div><h2>Report contents</h2><p>Choose the graphs, charts, and tables to include in the downloaded and emailed report.</p></div></div>
+        <h3 class="report-options-subhead">Charts and graphs</h3>
         <div class="report-options-grid">
-          ${row("chart", "Code distribution chart")}
+          ${row("pie", "Pie chart")}
+          ${row("donut", "Donut chart")}
+          ${row("categorical", "Categorical pie chart")}
+          ${row("barh", "Bar chart (horizontal)")}
+          ${row("barv", "Bar chart (vertical)")}
+          ${row("longitudinal", "Longitudinal bar chart")}
+          ${row("stacked", "Stacked bar by time")}
+          ${row("stackedpct", "Stacked bar % by time")}
+        </div>
+        <h3 class="report-options-subhead">Tables and sections</h3>
+        <div class="report-options-grid">
           ${row("frequency", "Behavior frequency table")}
           ${row("segments", "10-minute pattern table")}
           ${row("notes", "Notes highlights")}
@@ -2949,6 +3025,338 @@ h2 {
           )
           .join("")}
       </ul>
+    `;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Data visualizations (matches the PAITE spreadsheet template tabs)
+  // ---------------------------------------------------------------------------
+  const CHART_CATEGORIES = [
+    { name: "Science of Learning", color: "#1971c2", codes: ["PRIOR", "COMP", "EQPART", "ACTIVE"] },
+    { name: "Social Psychological", color: "#0ca678", codes: ["AFFIRM", "GROW"] },
+    { name: "Classroom Climate", color: "#e8590c", codes: ["COM", "REL", "NAME", "EXCL", "IDEN"] },
+    { name: "UDL & CRT", color: "#9c36b5", codes: ["MED", "DIVEX", "REAL", "CHOICE"] },
+    { name: "Other", color: "#868e96", codes: ["O"] },
+  ];
+  const SESSION_COLORS = ["#007b77", "#1971c2", "#e8590c", "#9c36b5", "#2f9e44", "#c2255c"];
+  const CHART_TYPES = [
+    { key: "donut", label: "Donut chart" },
+    { key: "pie", label: "Pie chart" },
+    { key: "categorical", label: "Categorical pie chart" },
+    { key: "barh", label: "Bar chart (horizontal)" },
+    { key: "barv", label: "Bar chart (vertical)" },
+    { key: "longitudinal", label: "Longitudinal bar chart" },
+    { key: "table", label: "Table" },
+    { key: "stacked", label: "Stacked bar by time" },
+    { key: "stackedpct", label: "Stacked bar % by time" },
+  ];
+  const EMPTY_CHART = '<p class="empty-inline">No coded behaviors recorded yet.</p>';
+
+  function codeColor(code) {
+    return CODE_COLORS[code] || "#868e96";
+  }
+
+  function orderedCodeTotals(observation) {
+    const totals = SCORING.getCodeTotals(observation.intervals);
+    return DATA.codes.map((c) => ({
+      code: c.code,
+      shortLabel: c.shortLabel,
+      total: totals[c.code] || 0,
+    }));
+  }
+
+  function codePieSlices(observation) {
+    return getPieData(observation).map((it) => ({
+      label: `${it.code} ${it.shortLabel}`,
+      value: it.total,
+      color: codeColor(it.code),
+    }));
+  }
+
+  function categorySlices(observation) {
+    const totals = SCORING.getCodeTotals(observation.intervals);
+    return CHART_CATEGORIES.map((cat) => ({
+      label: cat.name,
+      value: cat.codes.reduce((sum, code) => sum + (totals[code] || 0), 0),
+      color: cat.color,
+    })).filter((item) => item.value > 0);
+  }
+
+  function drawSlicesSvg(slices, { size = 280, innerRatio = 0, ariaLabel = "Pie chart" } = {}) {
+    const total = slices.reduce((sum, s) => sum + s.value, 0);
+    if (!total) return EMPTY_CHART;
+    const cx = size / 2;
+    const cy = size / 2;
+    const r = size / 2 - 4;
+    let angle = 0;
+    let shapes = "";
+    if (slices.length === 1) {
+      shapes = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${slices[0].color}"><title>${escapeHtml(slices[0].label)}: ${slices[0].value} (100%)</title></circle>`;
+    } else {
+      shapes = slices
+        .map((item) => {
+          const share = item.value / total;
+          const start = angle;
+          const end = angle + share * 360;
+          angle = end;
+          const pct = Math.round(share * 100);
+          return `<path d="${pieSlicePath(cx, cy, r, start, end)}" fill="${item.color}" stroke="#fff" stroke-width="1.5"><title>${escapeHtml(item.label)}: ${item.value} (${pct}%)</title></path>`;
+        })
+        .join("");
+    }
+    if (innerRatio > 0) {
+      shapes += `<circle cx="${cx}" cy="${cy}" r="${(r * innerRatio).toFixed(1)}" fill="#fff" />`;
+    }
+    return `<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" role="img" aria-label="${escapeHtml(ariaLabel)}">${shapes}</svg>`;
+  }
+
+  function drawLegend(items) {
+    const total = items.reduce((sum, it) => sum + it.value, 0);
+    if (!total) return "";
+    return `<ul class="pie-legend">${items
+      .map(
+        (it) => `<li><span class="legend-swatch" style="background:${it.color}"></span><span class="legend-label">${escapeHtml(it.label)}</span><span class="legend-value">${it.value}${total ? ` · ${Math.round((it.value / total) * 100)}%` : ""}</span></li>`,
+      )
+      .join("")}</ul>`;
+  }
+
+  function drawBarChart(bars, { horizontal, ariaLabel = "Bar chart" }) {
+    const active = bars.filter((b) => b.value > 0);
+    if (!active.length) return EMPTY_CHART;
+    const max = Math.max(...bars.map((b) => b.value), 1);
+    if (horizontal) {
+      const labelW = 74;
+      const chartW = 440;
+      const rowH = 24;
+      const gap = 7;
+      const pad = 10;
+      const width = labelW + chartW + 44;
+      const height = pad * 2 + bars.length * (rowH + gap);
+      const rows = bars
+        .map((b, i) => {
+          const y = pad + i * (rowH + gap);
+          const w = (b.value / max) * chartW;
+          return `<text x="${labelW - 6}" y="${y + rowH / 2}" text-anchor="end" dominant-baseline="middle" font-size="11" fill="#1c2321">${escapeHtml(b.code)}</text><rect x="${labelW}" y="${y}" width="${w.toFixed(1)}" height="${rowH}" rx="3" fill="${b.color}"><title>${escapeHtml(b.code)}: ${b.value}</title></rect><text x="${labelW + w + 6}" y="${y + rowH / 2}" dominant-baseline="middle" font-size="11" fill="#4c5a56">${b.value}</text>`;
+        })
+        .join("");
+      return `<svg viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" role="img" aria-label="${escapeHtml(ariaLabel)}">${rows}</svg>`;
+    }
+    const colW = 30;
+    const gap = 10;
+    const pad = 12;
+    const chartH = 220;
+    const valueH = 16;
+    const labelH = 44;
+    const width = pad * 2 + bars.length * (colW + gap);
+    const height = pad + valueH + chartH + labelH;
+    const baseY = pad + valueH + chartH;
+    const cols = bars
+      .map((b, i) => {
+        const x = pad + i * (colW + gap);
+        const h = (b.value / max) * chartH;
+        const y = baseY - h;
+        const cxLabel = x + colW / 2;
+        return `<rect x="${x}" y="${y.toFixed(1)}" width="${colW}" height="${h.toFixed(1)}" rx="3" fill="${b.color}"><title>${escapeHtml(b.code)}: ${b.value}</title></rect><text x="${cxLabel}" y="${y - 4}" text-anchor="middle" font-size="10" fill="#4c5a56">${b.value}</text><text x="${cxLabel}" y="${baseY + 12}" text-anchor="end" font-size="10" fill="#1c2321" transform="rotate(-45 ${cxLabel} ${baseY + 12})">${escapeHtml(b.code)}</text>`;
+      })
+      .join("");
+    return `<svg viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" role="img" aria-label="${escapeHtml(ariaLabel)}"><line x1="${pad}" y1="${baseY}" x2="${width - pad}" y2="${baseY}" stroke="#d5ddda" />${cols}</svg>`;
+  }
+
+  function getLongitudinalSessions(currentObs) {
+    const seen = new Set();
+    const all = [];
+    if (currentObs) all.push(currentObs);
+    getHistory().forEach((h) => all.push(h));
+    const unique = [];
+    all.forEach((o) => {
+      if (!o || seen.has(o.id)) return;
+      seen.add(o.id);
+      unique.push(o);
+    });
+    unique.sort(
+      (a, b) =>
+        new Date(b.updatedAt || b.createdAt).getTime() -
+        new Date(a.updatedAt || a.createdAt).getTime(),
+    );
+    return unique
+      .slice(0, 6)
+      .reverse()
+      .map((o, i) => ({
+        label: `Obs ${i + 1}`,
+        totals: SCORING.getCodeTotals(o.intervals),
+      }));
+  }
+
+  function drawLongitudinalChart(sessions) {
+    if (!sessions.length) return EMPTY_CHART;
+    const codes = DATA.codes.map((c) => c.code);
+    const activeCodes = codes.filter((code) =>
+      sessions.some((s) => (s.totals[code] || 0) > 0),
+    );
+    if (!activeCodes.length) return EMPTY_CHART;
+    const n = sessions.length;
+    const barW = n > 3 ? 6 : 10;
+    const innerGap = 2;
+    const groupGap = 16;
+    const pad = 12;
+    const chartH = 220;
+    const valueH = 10;
+    const labelH = 42;
+    const groupW = n * barW + (n - 1) * innerGap;
+    const width = pad * 2 + activeCodes.length * (groupW + groupGap);
+    const height = pad + valueH + chartH + labelH;
+    const baseY = pad + valueH + chartH;
+    const max = Math.max(
+      1,
+      ...sessions.flatMap((s) => activeCodes.map((c) => s.totals[c] || 0)),
+    );
+    const groups = activeCodes
+      .map((code, gi) => {
+        const gx = pad + gi * (groupW + groupGap);
+        const bars = sessions
+          .map((s, si) => {
+            const v = s.totals[code] || 0;
+            const h = (v / max) * chartH;
+            const x = gx + si * (barW + innerGap);
+            return `<rect x="${x}" y="${(baseY - h).toFixed(1)}" width="${barW}" height="${h.toFixed(1)}" fill="${SESSION_COLORS[si % SESSION_COLORS.length]}"><title>${escapeHtml(s.label)} — ${code}: ${v}</title></rect>`;
+          })
+          .join("");
+        const labelX = gx + groupW / 2;
+        return `${bars}<text x="${labelX}" y="${baseY + 12}" text-anchor="end" font-size="10" fill="#1c2321" transform="rotate(-45 ${labelX} ${baseY + 12})">${escapeHtml(code)}</text>`;
+      })
+      .join("");
+    return `<svg viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" role="img" aria-label="Longitudinal bar chart across observation sessions"><line x1="${pad}" y1="${baseY}" x2="${width - pad}" y2="${baseY}" stroke="#d5ddda" />${groups}</svg>`;
+  }
+
+  function drawStackedByTime(segments, percent) {
+    if (!segments.length) return EMPTY_CHART;
+    const activeCodes = DATA.codes
+      .filter((item) => segments.some((seg) => (seg.totals[item.code] || 0) > 0))
+      .map((item) => item.code);
+    if (!activeCodes.length) return EMPTY_CHART;
+    const colW = 46;
+    const gap = 18;
+    const pad = 12;
+    const chartH = 240;
+    const valueH = 8;
+    const labelH = 40;
+    const width = pad * 2 + segments.length * (colW + gap);
+    const height = pad + valueH + chartH + labelH;
+    const baseY = pad + valueH + chartH;
+    const totals = segments.map((seg) =>
+      activeCodes.reduce((sum, code) => sum + (seg.totals[code] || 0), 0),
+    );
+    const maxTotal = Math.max(1, ...totals);
+    const cols = segments
+      .map((seg, i) => {
+        const x = pad + i * (colW + gap);
+        const colTotal = totals[i] || 0;
+        const fullH = percent ? chartH : (colTotal / maxTotal) * chartH;
+        let cursor = baseY - fullH;
+        const stack = activeCodes
+          .map((code) => {
+            const v = seg.totals[code] || 0;
+            if (!v) return "";
+            const segH = percent
+              ? colTotal
+                ? (v / colTotal) * chartH
+                : 0
+              : (v / maxTotal) * chartH;
+            const rect = `<rect x="${x}" y="${cursor.toFixed(1)}" width="${colW}" height="${segH.toFixed(1)}" fill="${codeColor(code)}"><title>${escapeHtml(code)} — ${seg.startMin}–${seg.endMin} min: ${v}</title></rect>`;
+            cursor += segH;
+            return rect;
+          })
+          .join("");
+        const labelX = x + colW / 2;
+        return `${stack}<text x="${labelX}" y="${baseY + 14}" text-anchor="middle" font-size="10" fill="#1c2321">${seg.startMin}–${seg.endMin}</text>`;
+      })
+      .join("");
+    return `<svg viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" role="img" aria-label="Stacked bar chart of behavior codes by time interval"><line x1="${pad}" y1="${baseY}" x2="${width - pad}" y2="${baseY}" stroke="#d5ddda" />${cols}</svg>`;
+  }
+
+  function drawCodeTable(observation) {
+    const rows = orderedCodeTotals(observation);
+    return `<table class="freq viz-table">
+  <thead><tr><th>PAITE Code</th><th>Behavior</th><th>Number of Occurrences</th></tr></thead>
+  <tbody>${DATA.codes
+    .map((c, i) => `<tr><td><strong>${c.code}</strong></td><td>${escapeHtml(c.label)}</td><td>${rows[i].total}</td></tr>`)
+    .join("")}</tbody>
+</table>`;
+  }
+
+  function activeCodeLegendItems(observation) {
+    return orderedCodeTotals(observation)
+      .filter((c) => c.total > 0)
+      .map((c) => ({ label: `${c.code} ${c.shortLabel}`, value: c.total, color: codeColor(c.code) }));
+  }
+
+  function renderChartByType(key, observation) {
+    switch (key) {
+      case "donut":
+        return (
+          `<div class="viz-figure">${drawSlicesSvg(codePieSlices(observation), { innerRatio: 0.58, ariaLabel: "Donut chart of PAITE codes" })}</div>` +
+          drawLegend(codePieSlices(observation))
+        );
+      case "pie":
+        return (
+          `<div class="viz-figure">${drawSlicesSvg(codePieSlices(observation), { ariaLabel: "Pie chart of PAITE codes" })}</div>` +
+          drawLegend(codePieSlices(observation))
+        );
+      case "categorical":
+        return (
+          `<div class="viz-figure">${drawSlicesSvg(categorySlices(observation), { ariaLabel: "Categorical pie chart" })}</div>` +
+          drawLegend(categorySlices(observation))
+        );
+      case "barh":
+        return `<div class="viz-scroll">${drawBarChart(orderedCodeTotals(observation).map((c) => ({ code: c.code, value: c.total, color: codeColor(c.code) })), { horizontal: true, ariaLabel: "Horizontal bar chart of PAITE codes" })}</div>`;
+      case "barv":
+        return `<div class="viz-scroll">${drawBarChart(orderedCodeTotals(observation).map((c) => ({ code: c.code, value: c.total, color: codeColor(c.code) })), { horizontal: false, ariaLabel: "Vertical bar chart of PAITE codes" })}</div>`;
+      case "longitudinal": {
+        const sessions = getLongitudinalSessions(observation);
+        const note =
+          sessions.length < 2
+            ? '<p class="viz-note">Only one observation is saved. Complete more observations to compare sessions.</p>'
+            : "";
+        return (
+          `<div class="viz-scroll">${drawLongitudinalChart(sessions)}</div>` +
+          drawLegend(sessions.map((s, i) => ({ label: s.label, value: 1, color: SESSION_COLORS[i % SESSION_COLORS.length] }))).replace(/ · \d+%/g, "") +
+          note
+        );
+      }
+      case "table":
+        return drawCodeTable(observation);
+      case "stacked":
+        return (
+          `<div class="viz-scroll">${drawStackedByTime(SCORING.getSegmentTotals(observation.intervals), false)}</div>` +
+          drawLegend(activeCodeLegendItems(observation))
+        );
+      case "stackedpct":
+        return (
+          `<div class="viz-scroll">${drawStackedByTime(SCORING.getSegmentTotals(observation.intervals), true)}</div>` +
+          drawLegend(activeCodeLegendItems(observation))
+        );
+      default:
+        return EMPTY_CHART;
+    }
+  }
+
+  function chartTitle(key) {
+    const found = CHART_TYPES.find((t) => t.key === key);
+    return found ? found.label : "Chart";
+  }
+
+  function renderVizPanel(observation) {
+    return `
+      <section class="summary-panel viz-panel">
+        <div class="panel-heading"><div><h2>Data visualizations</h2><p>Generate charts, graphs, and tables from this observation, matching the PAITE visualization template.</p></div></div>
+        <label class="field viz-select-field print-hidden">
+          <span>Chart type</span>
+          <select data-role="chart-type">
+            ${CHART_TYPES.map((t) => `<option value="${t.key}" ${state.chartType === t.key ? "selected" : ""}>${t.label}</option>`).join("")}
+          </select>
+        </label>
+        <div id="viz-output" class="viz-output">${renderChartByType(state.chartType, observation)}</div>
+      </section>
     `;
   }
 
@@ -3358,6 +3766,26 @@ h2 {
 </table>`;
   }
 
+  function reportChartsHtml(observation) {
+    const opts = state.reportOptions;
+    const chartKeys = [
+      "pie",
+      "donut",
+      "categorical",
+      "barh",
+      "barv",
+      "longitudinal",
+      "stacked",
+      "stackedpct",
+    ];
+    return chartKeys
+      .filter((key) => opts[key])
+      .map(
+        (key) => `<h2>${chartTitle(key)}</h2>\n<div class="viz-chart-block">${renderChartByType(key, observation)}</div>`,
+      )
+      .join("\n");
+  }
+
   function buildReportHtml(observation) {
     const meta = observation.metadata;
     const opts = state.reportOptions;
@@ -3410,7 +3838,17 @@ h2 {
   .note-block strong { color: #007b77; }
   .instructions { background: #f2f6f5; border-left: 4px solid #007b77; padding: 0.75rem 1rem; font-size: 0.92rem; }
   .citation { font-size: 0.8rem; color: #4c5a56; margin-top: 2.5rem; border-top: 1px solid #d5ddda; padding-top: 0.75rem; }
-  @media print { body { margin: 0.5rem auto; } }
+  .viz-chart-block { margin-top: 0.75rem; }
+  .viz-chart-block .viz-scroll { overflow-x: auto; }
+  .viz-chart-block .viz-figure { text-align: center; }
+  .viz-chart-block table.viz-table { border-collapse: collapse; width: 100%; font-size: 0.9rem; }
+  .viz-chart-block table.viz-table th, .viz-chart-block table.viz-table td { border: 1px solid #d5ddda; padding: 0.3rem 0.55rem; text-align: left; }
+  .viz-chart-block table.viz-table th { background: #f2f6f5; }
+  ul.pie-legend { list-style: none; padding: 0; margin: 0.5rem 0 0; display: flex; flex-wrap: wrap; gap: 0.3rem 1rem; font-size: 0.85rem; }
+  ul.pie-legend li { display: flex; align-items: center; gap: 0.4rem; }
+  .legend-swatch { width: 0.85rem; height: 0.85rem; border-radius: 3px; display: inline-block; flex-shrink: 0; }
+  .viz-note { font-size: 0.82rem; color: #4c5a56; font-style: italic; }
+  @media print { body { margin: 0.5rem auto; } .viz-chart-block .viz-scroll { overflow: visible; } }
 </style>
 </head>
 <body>
@@ -3439,21 +3877,7 @@ ${
     : "<p>No coded behaviors were recorded during this observation.</p>"
 }
 
-${
-  opts.chart
-    ? `<h2>Code Distribution</h2>
-<div class="chart-wrap">
-  ${renderPieSvg(observation, 260)}
-  <ul class="legend">
-    ${getPieData(observation)
-      .map(
-        (item) => `<li><span class="swatch" style="background:${CODE_COLORS[item.code] || "#868e96"}"></span><strong>${item.code}</strong>&nbsp;${escapeHtml(item.shortLabel)} — ${item.total}</li>`,
-      )
-      .join("")}
-  </ul>
-</div>`
-    : ""
-}
+${reportChartsHtml(observation)}
 
 ${
   opts.frequency
@@ -3608,6 +4032,14 @@ ${
     if (event.target.dataset.meta) updateMetaField(event.target);
     if (event.target.dataset.reportOption) {
       state.reportOptions[event.target.dataset.reportOption] = event.target.checked;
+    }
+    if (event.target.dataset.role === "chart-type") {
+      state.chartType = event.target.value;
+      const output = document.getElementById("viz-output");
+      const observation = getSummaryObservation();
+      if (output && observation) {
+        output.innerHTML = renderChartByType(state.chartType, observation);
+      }
     }
   });
 

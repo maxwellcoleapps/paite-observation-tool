@@ -6,6 +6,14 @@ Each entry lists what changed and when it went live. Times are US Eastern (UTC-4
 
 ---
 
+## v1.4 — July 4, 2026, 1:36 PM
+
+- Added a data visualization generator to the summary. Pick a chart type and view it live: donut, pie, categorical pie (grouped into the 5 PAITE categories), horizontal bar, vertical bar, longitudinal bar, table, stacked bar by time, and stacked bar percent by time.
+- Categorical pie groups the 16 codes into Science of Learning, Social Psychological, Classroom Climate, UDL & CRT, and Other, matching the spreadsheet template.
+- The longitudinal chart compares codes across your saved observation sessions, pulled automatically from history (most recent six).
+- Stacked-by-time charts use the 10-minute intervals. The percent version normalizes each interval to 100%.
+- Report contents now lets you include any of these charts and graphs in the downloaded and emailed report, alongside the frequency table, 10-minute pattern, notes, context, and suggestions.
+
 ## v1.3 — July 4, 2026, 12:50 PM
 
 - Setup form now uses a single required "Instructor Name or ID" field. The separate instructor name field was removed.
